@@ -186,13 +186,25 @@
         // Démarrage de la caméra au chargement
         window.addEventListener('load', () => {
             html5QrcodeScanner = new Html5Qrcode("reader");
+            
+            // CORRECTIF : Création d'une fonction pour ignorer les erreurs de lecture
+            // à chaque frame où aucun QR Code n'est visible.
+            const onScanFailure = (error) => {
+                // On laisse cette fonction vide délibérément.
+                // Sans elle, le script s'arrête de chercher après la 1ère frame vide.
+            };
+
             html5QrcodeScanner.start(
-                { facingMode: "environment" }, // Caméra arrière privilégiée
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                onScanSuccess
+                { facingMode: "environment" }, // Force la caméra arrière
+                { 
+                    fps: 10, 
+                    qrbox: { width: 250, height: 250 } 
+                },
+                onScanSuccess,
+                onScanFailure // <-- AJOUT INDISPENSABLE ICI
             ).catch(err => {
                 console.error("Erreur d'accès à la caméra :", err);
-                document.getElementById('reader').innerHTML = "<p style='color:white; padding:20px'>Erreur caméra. Vérifiez les permissions.</p>";
+                document.getElementById('reader').innerHTML = "<p style='padding:20px; text-align:center;'>Erreur caméra. Vérifiez les permissions de votre navigateur.</p>";
             });
         });
     </script>

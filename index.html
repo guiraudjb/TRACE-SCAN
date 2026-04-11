@@ -7,113 +7,118 @@
     <link rel="manifest" href="manifest.json">
     <style>
         :root {
-    --blue-france: #000091; /* [cite: 33] */
-    --grey-border: #E5E5E5; /* [cite: 35] */
-    --text-color: #1e1e1e;
-}
+            --blue-france: #000091;
+            --grey-border: #E5E5E5;
+            --text-color: #1e1e1e;
+        }
 
-body {
-    font-family: 'Marianne', Arial, sans-serif; /* [cite: 32] */
-    margin: 0;
-    background-color: #f6f6f6;
-    display: flex;
-    flex-direction: column;
-    height: 100vh; /* Utilise toute la hauteur de l'écran */
-    overflow: hidden; /* Empêche le scroll global de la page */
-}
+        body {
+            font-family: 'Marianne', Arial, sans-serif;
+            margin: 0;
+            background-color: #f6f6f6;
+            display: flex;
+            flex-direction: column;
+            height: 100vh; /* Utilise toute la hauteur de l'écran */
+            overflow: hidden; /* Empêche le scroll global de la page */
+        }
 
-header {
-    flex-shrink: 0; /* L'en-tête ne rétrécit pas [cite: 30] */
-    background-color: white;
-    padding: 10px 15px;
-    border-bottom: 2px solid var(--blue-france);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
+        header {
+            flex-shrink: 0; /* L'en-tête ne rétrécit pas */
+            background-color: white;
+            padding: 10px 15px;
+            border-bottom: 2px solid var(--blue-france);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
-main {
-    flex-grow: 1; /* La zone de scan prend tout l'espace restant  */
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-    gap: 10px;
-    min-height: 0; /* Important pour le scroll interne */
-}
+        main {
+            flex-grow: 1; /* La zone de scan prend tout l'espace restant  */
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            gap: 10px;
+            min-height: 0; /* Important pour le scroll interne */
+        }
 
-#reader-container {
-    flex-grow: 1; /* Maximise la zone de visée  */
-    position: relative;
-    background: black;
-    border-radius: 4px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-}
+        #reader-container {
+            flex-grow: 1; /* Maximise la zone de visée  */
+            position: relative;
+            background: black;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
 
-#reader { width: 100%; }
+        #reader { width: 100%; }
 
-.dashboard {
-    flex-shrink: 0; /* Le panneau de contrôle reste toujours visible en bas */
-    background: white;
-    padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
-}
+        .dashboard {
+            flex-shrink: 0; /* Le panneau de contrôle reste toujours visible en bas */
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
 
-.scan-list-container {
-    max-height: 120px; /* Limite la hauteur de la liste [cite: 17] */
-    overflow-y: auto; /* Active le scroll uniquement pour la liste */
-    margin: 5px 0;
-    border-top: 1px solid var(--grey-border);
-}
+        .scan-list-container {
+            max-height: 120px; /* Limite la hauteur de la liste */
+            overflow-y: auto; /* Active le scroll uniquement pour la liste */
+            margin: 5px 0;
+            border-top: 1px solid var(--grey-border);
+        }
 
-.scan-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    font-family: monospace;
-    font-size: 0.85rem;
-}
+        .scan-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
 
-.button-group {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
 
-button {
-    flex: 1;
-    padding: 14px; /* Boutons plus larges pour tactile */
-    font-weight: bold;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-}
+        button {
+            flex: 1;
+            padding: 14px; /* Boutons plus larges pour tactile */
+            font-weight: bold;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
 
-.btn-primary { background-color: var(--blue-france); color: white; } /* [cite: 33] */
-.btn-secondary { background-color: white; color: #666; border: 1px solid #ccc; } /* [cite: 35] */
+        .btn-primary { background-color: var(--blue-france); color: white; }
+        .btn-secondary { background-color: white; color: #666; border: 1px solid #ccc; }
 
+        /* Animation optionnelle pour le feedback de scan */
+        .scan-success {
+            outline: 4px solid #4CAF50;
+            transition: outline 0.1s;
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo-rf">République<br>Française</div>
-        <h1>TRACE_SCAN</h1>
+        <div class="logo-rf" style="font-weight: bold; font-size: 0.9em; line-height: 1.1;">République<br>Française</div>
+        <h1 style="margin: 0; font-size: 1.5em;">TRACE_SCAN</h1>
     </header>
 
 <main>
     <div id="reader-container">
         <div id="reader"></div>
-        <div class="scanner-laser"></div>
     </div>
     
     <div class="dashboard">
         <div class="stats">
-            <strong>Total : <span id="total-count">0</span></strong> </div>
+            <strong>Total : <span id="total-count">0</span></strong> 
+        </div>
         
         <div class="scan-list-container">
             <ul class="scan-list" id="recent-scans">
@@ -122,13 +127,16 @@ button {
         </div>
         
         <div class="button-group">
-            <button class="btn-secondary" onclick="annulerDernier()">Annuler dernier</button> <button class="btn-primary" onclick="terminerSession()">Terminer la session</button> </div>
+            <button class="btn-secondary" onclick="annulerDernier()">Annuler dernier</button> 
+            <button class="btn-primary" onclick="terminerSession()">Terminer la session</button> 
+        </div>
     </div>
 </main>
 
     <script src="./html5-qrcode.min.js"></script>
 
     <script>
+        // Enregistrement du Service Worker pour le mode PWA (Hors-ligne)
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
                 .then(() => console.log('Mode Offline prêt.'))
@@ -139,13 +147,18 @@ button {
         let html5QrCode;
 
         function onScanSuccess(decodedText) {
+            // Empêche les doublons consécutifs (si l'utilisateur reste sur le même QR code)
             if (scanList[scanList.length - 1] === decodedText) return;
+            
             scanList.push(decodedText);
             
+            // Retour visuel et haptique
             const container = document.getElementById('reader-container');
             container.classList.add('scan-success');
             if (navigator.vibrate) navigator.vibrate(100);
+            
             updateUI();
+            
             setTimeout(() => container.classList.remove('scan-success'), 300);
         }
 
@@ -153,8 +166,10 @@ button {
             document.getElementById('total-count').innerText = scanList.length;
             const listElement = document.getElementById('recent-scans');
             listElement.innerHTML = '';
+            
+            // Afficher les 5 derniers scans, le plus récent en haut
             const recent = scanList.slice(-5).reverse();
-            recent.forEach((item, index) => {
+            recent.forEach((item) => {
                 const li = document.createElement('li');
                 li.textContent = item;
                 listElement.appendChild(li);
@@ -165,49 +180,62 @@ button {
             if (scanList.length > 0) {
                 scanList.pop();
                 updateUI();
+                
+                // Si la liste est vide après annulation, remettre le message d'attente
+                if (scanList.length === 0) {
+                    document.getElementById('recent-scans').innerHTML = '<li style="color:#999">En attente de scan...</li>';
+                }
             }
         }
 
         async function terminerSession() {
-            if (scanList.length === 0) return alert("Aucun scan.");
+            if (scanList.length === 0) return alert("Aucun scan n'a été effectué.");
 
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
             const timeStr = now.getHours().toString().padStart(2,'0') + now.getMinutes().toString().padStart(2,'0');
-            const fileName = `scan_trace_${dateStr}_${timeStr}.txt`; /* Nommage YYYY-MM-DD_HHmm [cite: 23] */
+            const fileName = `scan_trace_${dateStr}_${timeStr}.txt`;
 
             const content = scanList.join('\n');
             const file = new File([content], fileName, { type: 'text/plain;charset=utf-8' });
 
+            // Tentative d'utilisation de l'API Web Share (partage natif mobile)
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try {
                     await navigator.share({
                         files: [file],
                         title: 'Inventaire TRACE_SCAN',
-                        text: 'Fichier joint pour le service.' /* Partage Android [cite: 24, 47] */
+                        text: 'Fichier d\'inventaire joint.'
                     });
-                } catch (e) { console.log("Partage annulé"); }
+                } catch (e) { 
+                    console.log("Partage annulé ou échoué", e); 
+                }
             } else {
+                // Solution de repli : téléchargement classique du fichier
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(file);
                 link.download = fileName;
                 link.click();
+                URL.revokeObjectURL(link.href); // Libère la mémoire
             }
         }
 
         window.addEventListener('load', () => {
-            html5QrCode = new Html5Qrcode("reader");
+            // INITIALISATION CORRIGÉE : formatsToSupport est placé dans le constructeur
+            html5QrCode = new Html5Qrcode("reader", { 
+                formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ] 
+            });
+
+            // Démarrage de la caméra avec les options d'affichage
             html5QrCode.start(
                 { facingMode: "environment" }, 
                 { 
                     fps: 15, 
-                    qrbox: { width: 250, height: 250 },
-                    // FORCE LE FORMAT QR CODE POUR LA DÉTECTION 
-                    formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ] 
+                    qrbox: { width: 250, height: 250 }
                 },
                 onScanSuccess,
-                () => { /* Loop failures ignored */ }
-            ).catch(err => console.error("Erreur caméra :", err));
+                () => { /* Les erreurs de lecture (non-détection) sont ignorées silencieusement */ }
+            ).catch(err => console.error("Erreur d'accès à la caméra :", err));
         });
     </script>
 </body>

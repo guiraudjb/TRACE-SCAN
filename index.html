@@ -2,209 +2,281 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TRACE_SCAN</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TRACE_SCAN - Inventaire Nomade</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        /* Styles inspirés du DSFR pour un rendu Mobile First épuré */
+        /* DESIGN ET ERGONOMIE (Respect DSFR)  */
         :root {
-            --blue-france: #000091;
+            --blue-france: #000091; /* Bleu France [cite: 33] */
             --grey-border: #E5E5E5;
+            --text-color: #1e1e1e;
         }
+
         body {
-            font-family: 'Marianne', system-ui, sans-serif; /* Typographie Marianne [cite: 32] */
+            font-family: 'Marianne', Arial, sans-serif; /* Typographie Marianne [cite: 32] */
             margin: 0;
-            padding: 0;
             background-color: #f6f6f6;
+            color: var(--text-color);
             display: flex;
             flex-direction: column;
             height: 100vh;
+            overflow: hidden;
         }
+
+        /* En-tête simplifiée avec logo "République Française" [cite: 30] */
         header {
             background-color: white;
-            padding: 1rem;
+            padding: 10px 15px;
             border-bottom: 2px solid var(--blue-france);
             display: flex;
             align-items: center;
+            gap: 15px;
         }
-        h1 { margin: 0; font-size: 1.2rem; color: #1e1e1e; }
-        
+
+        .logo-rf {
+            height: 40px;
+            border-left: 2px solid black;
+            padding-left: 8px;
+            font-weight: 900;
+            font-size: 0.7rem;
+            line-height: 1;
+            text-transform: uppercase;
+        }
+
+        h1 { margin: 0; font-size: 1.1rem; flex-grow: 1; }
+
+        /* Interface "Mobile First" ultra-épurée pour la caméra [cite: 36] */
         main {
             flex-grow: 1;
-            padding: 1rem;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            padding: 10px;
+            gap: 10px;
         }
-        
-        #reader { width: 100%; background: black; border-radius: 4px; overflow: hidden; }
-        
+
+        #reader-container {
+            position: relative;
+            width: 100%;
+            background: black;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 3px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+
+        /* Effet visuel lors d'une identification réussie */
+        #reader-container.scan-success {
+            border-color: #27a658; /* Vert succès */
+        }
+
+        #reader { width: 100%; }
+
+        /* Ligne laser d'animation */
+        .scanner-laser {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 0, 145, 0.6);
+            box-shadow: 0 0 10px 2px rgba(0, 0, 145, 0.8);
+            z-index: 10;
+            pointer-events: none;
+            animation: scanning 2s infinite linear;
+        }
+
+        @keyframes scanning {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+
+        /* Gestion de liste et compteurs [cite: 17, 20] */
         .dashboard {
             background: white;
-            padding: 1rem;
+            padding: 12px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
-        
-        .counter { font-weight: bold; font-size: 1.1rem; margin-bottom: 1rem; }
-        .scan-list { list-style-type: none; padding: 0; margin: 0; font-family: monospace; }
-        .scan-list li { padding: 0.5rem 0; border-bottom: 1px solid var(--grey-border); }
-        .scan-list li:last-child { border-bottom: none; }
-        
-        .button-group { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
-        button {
-            padding: 0.75rem 1rem;
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 10px;
             font-size: 1rem;
+        }
+
+        .scan-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .scan-list li {
+            padding: 6px 0;
+            border-bottom: 1px solid var(--grey-border);
+        }
+
+        .new-item { animation: highlight 1s ease-out; }
+        @keyframes highlight {
+            0% { background-color: rgba(0, 0, 145, 0.2); }
+            100% { background-color: transparent; }
+        }
+
+        /* Boutons d'action [cite: 33, 35] */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
-            flex-grow: 1;
-        }
-        .btn-primary {
-            background-color: var(--blue-france); /* Bouton primaire bleu France [cite: 33] */
-            color: white;
             border: none;
+            font-size: 0.9rem;
         }
-        .btn-secondary {
-            background-color: transparent;
-            color: var(--blue-france);
-            border: 1px solid var(--blue-france); /* Bouton secondaire bordure [cite: 35] */
-        }
+
+        .btn-primary { background-color: var(--blue-france); color: white; }
+        .btn-secondary { background-color: white; color: #666; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>TRACE_SCAN</h1>
+        <div class="logo-rf">République<br>Française</div>
+        <h1>TRACE_SCAN v1.0 [cite: 4]</h1>
     </header>
 
     <main>
-        <div id="reader"></div> <div class="dashboard">
-            <div class="counter">Total scanné : <span id="total-count">0</span></div> <div><strong>5 derniers scans :</strong></div>
+        <div id="reader-container">
+            <div id="reader"></div>
+            <div class="scanner-laser"></div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="stats">
+                <span>Compteur : <span id="total-count">0</span></span> [cite: 20]
+                <span style="color: var(--blue-france);">En cours...</span>
+            </div>
+            
+            <strong>5 derniers scans : [cite: 17]</strong>
             <ul class="scan-list" id="recent-scans">
-                <li>Aucun scan pour le moment.</li>
+                <li style="color:#999">En attente de scan...</li>
             </ul>
             
             <div class="button-group">
-                <button class="btn-secondary" onclick="annulerDernier()">Annuler le dernier</button> <button class="btn-primary" onclick="terminerSession()">Terminer & Envoyer</button>
+                <button class="btn-secondary" onclick="annulerDernier()">Annuler dernier</button>
+                <button class="btn-primary" onclick="terminerSession()">Terminer la session</button>
             </div>
         </div>
     </main>
 
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
     <script>
-        // 1. Enregistrement du Service Worker pour le mode Offline 
+        // 1. Enregistrement Service Worker pour le mode Offline [cite: 41]
+        // Utilisation du chemin relatif pour éviter les erreurs de dossier
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log('Service Worker enregistré.'))
-                .catch(err => console.error('Erreur SW:', err));
+                .then(() => console.log('Mode Offline prêt.'))
+                .catch(err => console.error('Erreur PWA:', err));
         }
 
-        // 2. Logique de l'application
+        // 2. Variables d'état (Stateless - pas de stockage DB [cite: 44])
         let scanList = [];
-        let html5QrcodeScanner;
+        let html5QrCode;
+
+        // 3. Logique de Scan immédiate [cite: 16]
+        function onScanSuccess(decodedText) {
+            // Évite les doublons immédiats
+            if (scanList[scanList.length - 1] === decodedText) return;
+
+            scanList.push(decodedText); // La liste s'incrémente en temps réel [cite: 10]
+            
+            // Effets visuels et haptiques
+            const container = document.getElementById('reader-container');
+            container.classList.add('scan-success');
+            if (navigator.vibrate) navigator.vibrate(100);
+            
+            updateUI();
+
+            setTimeout(() => container.classList.remove('scan-success'), 300);
+        }
 
         function updateUI() {
             document.getElementById('total-count').innerText = scanList.length;
-            
             const listElement = document.getElementById('recent-scans');
             listElement.innerHTML = '';
             
             // Affichage des 5 derniers scans [cite: 17]
             const recent = scanList.slice(-5).reverse();
-            
-            if (recent.length === 0) {
-                listElement.innerHTML = '<li>Aucun scan pour le moment.</li>';
-                return;
-            }
-
-            recent.forEach(item => {
+            recent.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.textContent = item;
+                if (index === 0) li.classList.add('new-item');
                 listElement.appendChild(li);
             });
         }
 
-        function onScanSuccess(decodedText) {
-            // Empêcher les doublons consécutifs rapides
-            if (scanList[scanList.length - 1] !== decodedText) {
-                scanList.push(decodedText); // Incrémentation en temps réel [cite: 10]
-                updateUI();
-                // Feedback haptique si supporté par l'appareil
-                if (navigator.vibrate) navigator.vibrate(100); 
-            }
-        }
-
         function annulerDernier() {
             if (scanList.length > 0) {
-                scanList.pop();
+                scanList.pop(); // Suppression dernière ligne [cite: 18]
                 updateUI();
             }
         }
 
+        // 4. Export et Transmission [cite: 12, 23, 24]
         async function terminerSession() {
-            if (scanList.length === 0) {
-                alert("Aucun scan à envoyer.");
-                return;
-            }
+            if (scanList.length === 0) return alert("Aucun scan effectué.");
 
-            // Génération du nom de fichier : scan_trace_YYYY-MM-DD_HHmm.txt [cite: 23]
+            // Nommage : scan_trace_YYYY-MM-DD_HHmm.txt [cite: 23]
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
-            const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '').substring(0, 4);
+            const timeStr = now.getHours().toString().padStart(2,'0') + now.getMinutes().toString().padStart(2,'0');
             const fileName = `scan_trace_${dateStr}_${timeStr}.txt`;
 
-            // Création du fichier texte UTF-8 [cite: 21, 22]
+            // Format : Fichier texte brut (.txt) UTF-8 [cite: 21, 22]
             const content = scanList.join('\n');
             const file = new File([content], fileName, { type: 'text/plain;charset=utf-8' });
 
-            // Envoi via Web Share API 
+            // Utilisation du "Partager" natif d'Android [cite: 24]
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try {
                     await navigator.share({
                         files: [file],
-                        title: 'Export TRACE_SCAN',
-                        text: 'Veuillez trouver ci-joint le fichier d\'inventaire.'
+                        title: 'Inventaire TRACE_SCAN',
+                        text: 'Veuillez trouver ci-joint l\'inventaire.'
                     });
-                    // Réinitialisation après envoi
-                    scanList = [];
-                    updateUI();
-                } catch (error) {
-                    console.log('Partage annulé ou échoué', error);
-                }
+                } catch (e) { console.log("Partage annulé"); }
             } else {
-                alert("Votre navigateur ne supporte pas le partage de fichiers direct.");
-                // Alternative (fallback) : Téléchargement direct
-                const link = document.createElement("a");
+                // Fallback téléchargement si Share API indisponible
+                const link = document.createElement('a');
                 link.href = URL.createObjectURL(file);
                 link.download = fileName;
                 link.click();
             }
         }
 
-        // Démarrage de la caméra au chargement
+        // 5. Initialisation Caméra
         window.addEventListener('load', () => {
-            html5QrcodeScanner = new Html5Qrcode("reader");
-            
-            // CORRECTIF : Création d'une fonction pour ignorer les erreurs de lecture
-            // à chaque frame où aucun QR Code n'est visible.
-            const onScanFailure = (error) => {
-                // On laisse cette fonction vide délibérément.
-                // Sans elle, le script s'arrête de chercher après la 1ère frame vide.
-            };
-
-            html5QrcodeScanner.start(
-                { facingMode: "environment" }, // Force la caméra arrière
-                { 
-                    fps: 10, 
-                    qrbox: { width: 250, height: 250 } 
-                },
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 200, height: 200 } },
                 onScanSuccess,
-                onScanFailure // <-- AJOUT INDISPENSABLE ICI
+                () => { /* Ignorer les échecs de lecture de frame */ }
             ).catch(err => {
-                console.error("Erreur d'accès à la caméra :", err);
-                document.getElementById('reader').innerHTML = "<p style='padding:20px; text-align:center;'>Erreur caméra. Vérifiez les permissions de votre navigateur.</p>";
+                document.getElementById('reader').innerHTML = `<p style="color:white;padding:20px;text-align:center">Erreur caméra : ${err}</p>`;
             });
         });
     </script>

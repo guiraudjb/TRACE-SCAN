@@ -6,10 +6,10 @@
     <title>TRACE_SCAN - Inventaire Nomade</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        /* DESIGN ET ERGONOMIE (Respect DSFR)  */
+        /* DESIGN ET ERGONOMIE (Respect DSFR) */
         :root {
-            --blue-france: #000091; /* Bleu France [cite: 33] */
-            --grey-border: #E5E5E5;
+            --blue-france: #000091; /* Boutons d'action primaire [cite: 33] */
+            --grey-border: #E5E5E5; /* Bouton secondaire [cite: 35] */
             --text-color: #1e1e1e;
         }
 
@@ -24,7 +24,6 @@
             overflow: hidden;
         }
 
-        /* En-tête simplifiée avec logo "République Française" [cite: 30] */
         header {
             background-color: white;
             padding: 10px 15px;
@@ -41,18 +40,17 @@
             font-weight: 900;
             font-size: 0.7rem;
             line-height: 1;
-            text-transform: uppercase;
+            text-transform: uppercase; /* Logo République Française [cite: 30] */
         }
 
         h1 { margin: 0; font-size: 1.1rem; flex-grow: 1; }
 
-        /* Interface "Mobile First" ultra-épurée pour la caméra [cite: 36] */
         main {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             padding: 10px;
-            gap: 10px;
+            gap: 10px; /* Interface Mobile First épurée [cite: 36] */
         }
 
         #reader-container {
@@ -65,14 +63,10 @@
             transition: border-color 0.2s ease;
         }
 
-        /* Effet visuel lors d'une identification réussie */
-        #reader-container.scan-success {
-            border-color: #27a658; /* Vert succès */
-        }
+        #reader-container.scan-success { border-color: #27a658; }
 
         #reader { width: 100%; }
 
-        /* Ligne laser d'animation */
         .scanner-laser {
             position: absolute;
             top: 0;
@@ -82,7 +76,6 @@
             background: rgba(0, 0, 145, 0.6);
             box-shadow: 0 0 10px 2px rgba(0, 0, 145, 0.8);
             z-index: 10;
-            pointer-events: none;
             animation: scanning 2s infinite linear;
         }
 
@@ -92,7 +85,6 @@
             100% { top: 0%; }
         }
 
-        /* Gestion de liste et compteurs [cite: 17, 20] */
         .dashboard {
             background: white;
             padding: 12px;
@@ -105,7 +97,6 @@
             justify-content: space-between;
             font-weight: bold;
             margin-bottom: 10px;
-            font-size: 1rem;
         }
 
         .scan-list {
@@ -123,18 +114,7 @@
             border-bottom: 1px solid var(--grey-border);
         }
 
-        .new-item { animation: highlight 1s ease-out; }
-        @keyframes highlight {
-            0% { background-color: rgba(0, 0, 145, 0.2); }
-            100% { background-color: transparent; }
-        }
-
-        /* Boutons d'action [cite: 33, 35] */
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-        }
+        .button-group { display: flex; gap: 10px; margin-top: 12px; }
 
         button {
             flex: 1;
@@ -143,7 +123,6 @@
             border-radius: 4px;
             cursor: pointer;
             border: none;
-            font-size: 0.9rem;
         }
 
         .btn-primary { background-color: var(--blue-france); color: white; }
@@ -154,7 +133,7 @@
 
     <header>
         <div class="logo-rf">République<br>Française</div>
-        <h1>TRACE_SCAN v1.0 [cite: 4]</h1>
+        <h1>TRACE_SCAN</h1>
     </header>
 
     <main>
@@ -165,51 +144,37 @@
         
         <div class="dashboard">
             <div class="stats">
-                <span>Compteur : <span id="total-count">0</span></span> [cite: 20]
-                <span style="color: var(--blue-france);">En cours...</span>
-            </div>
+                <span>Compteur : <span id="total-count">0</span></span> </div>
             
-            <strong>5 derniers scans : [cite: 17]</strong>
-            <ul class="scan-list" id="recent-scans">
-                <li style="color:#999">En attente de scan...</li>
+            <strong>5 derniers scans :</strong> <ul class="scan-list" id="recent-scans">
+                <li style="color:#999">En attente...</li>
             </ul>
             
             <div class="button-group">
-                <button class="btn-secondary" onclick="annulerDernier()">Annuler dernier</button>
-                <button class="btn-primary" onclick="terminerSession()">Terminer la session</button>
-            </div>
+                <button class="btn-secondary" onclick="annulerDernier()">Annuler dernier</button> <button class="btn-primary" onclick="terminerSession()">Terminer la session</button> </div>
         </div>
     </main>
 
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="./html5-qrcode.min.js"></script>
 
     <script>
-        // 1. Enregistrement Service Worker pour le mode Offline [cite: 41]
-        // Utilisation du chemin relatif pour éviter les erreurs de dossier
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
                 .then(() => console.log('Mode Offline prêt.'))
                 .catch(err => console.error('Erreur PWA:', err));
         }
 
-        // 2. Variables d'état (Stateless - pas de stockage DB [cite: 44])
         let scanList = [];
         let html5QrCode;
 
-        // 3. Logique de Scan immédiate [cite: 16]
         function onScanSuccess(decodedText) {
-            // Évite les doublons immédiats
             if (scanList[scanList.length - 1] === decodedText) return;
-
-            scanList.push(decodedText); // La liste s'incrémente en temps réel [cite: 10]
+            scanList.push(decodedText);
             
-            // Effets visuels et haptiques
             const container = document.getElementById('reader-container');
             container.classList.add('scan-success');
             if (navigator.vibrate) navigator.vibrate(100);
-            
             updateUI();
-
             setTimeout(() => container.classList.remove('scan-success'), 300);
         }
 
@@ -217,49 +182,41 @@
             document.getElementById('total-count').innerText = scanList.length;
             const listElement = document.getElementById('recent-scans');
             listElement.innerHTML = '';
-            
-            // Affichage des 5 derniers scans [cite: 17]
             const recent = scanList.slice(-5).reverse();
             recent.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.textContent = item;
-                if (index === 0) li.classList.add('new-item');
                 listElement.appendChild(li);
             });
         }
 
         function annulerDernier() {
             if (scanList.length > 0) {
-                scanList.pop(); // Suppression dernière ligne [cite: 18]
+                scanList.pop();
                 updateUI();
             }
         }
 
-        // 4. Export et Transmission [cite: 12, 23, 24]
         async function terminerSession() {
-            if (scanList.length === 0) return alert("Aucun scan effectué.");
+            if (scanList.length === 0) return alert("Aucun scan.");
 
-            // Nommage : scan_trace_YYYY-MM-DD_HHmm.txt [cite: 23]
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
             const timeStr = now.getHours().toString().padStart(2,'0') + now.getMinutes().toString().padStart(2,'0');
-            const fileName = `scan_trace_${dateStr}_${timeStr}.txt`;
+            const fileName = `scan_trace_${dateStr}_${timeStr}.txt`; /* Nommage YYYY-MM-DD_HHmm [cite: 23] */
 
-            // Format : Fichier texte brut (.txt) UTF-8 [cite: 21, 22]
             const content = scanList.join('\n');
             const file = new File([content], fileName, { type: 'text/plain;charset=utf-8' });
 
-            // Utilisation du "Partager" natif d'Android [cite: 24]
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try {
                     await navigator.share({
                         files: [file],
                         title: 'Inventaire TRACE_SCAN',
-                        text: 'Veuillez trouver ci-joint l\'inventaire.'
+                        text: 'Fichier joint pour le service.' /* Partage Android [cite: 24, 47] */
                     });
                 } catch (e) { console.log("Partage annulé"); }
             } else {
-                // Fallback téléchargement si Share API indisponible
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(file);
                 link.download = fileName;
@@ -267,17 +224,19 @@
             }
         }
 
-        // 5. Initialisation Caméra
         window.addEventListener('load', () => {
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
                 { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 200, height: 200 } },
+                { 
+                    fps: 15, 
+                    qrbox: { width: 250, height: 250 },
+                    // FORCE LE FORMAT QR CODE POUR LA DÉTECTION 
+                    formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ] 
+                },
                 onScanSuccess,
-                () => { /* Ignorer les échecs de lecture de frame */ }
-            ).catch(err => {
-                document.getElementById('reader').innerHTML = `<p style="color:white;padding:20px;text-align:center">Erreur caméra : ${err}</p>`;
-            });
+                () => { /* Loop failures ignored */ }
+            ).catch(err => console.error("Erreur caméra :", err));
         });
     </script>
 </body>

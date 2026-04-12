@@ -149,17 +149,21 @@
         function onScanSuccess(decodedText) {
             // Empêche les doublons consécutifs (si l'utilisateur reste sur le même QR code)
             if (scanList[scanList.length - 1] === decodedText) return;
-            
+            html5QrCode.pause();
             scanList.push(decodedText);
             
             // Retour visuel et haptique
             const container = document.getElementById('reader-container');
             container.classList.add('scan-success');
-            if (navigator.vibrate) navigator.vibrate(100);
+            if (navigator.vibrate) navigator.vibrate(500);
             
             updateUI();
             
-            setTimeout(() => container.classList.remove('scan-success'), 300);
+            setTimeout(() => {
+        container.classList.remove('scan-success');
+        html5QrCode.resume();
+        console.log("Scanner prêt pour le prochain scan.");
+    }, 1000);
         }
 
         function updateUI() {

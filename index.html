@@ -18,7 +18,7 @@
             background-color: #f6f6f6;
             display: flex;
             flex-direction: column;
-            height: 80vh; /* Utilise toute la hauteur de l'écran */
+            height: 100vh; /* Utilise toute la hauteur de l'écran */
             overflow: hidden; /* Empêche le scroll global de la page */
         }
 
@@ -105,10 +105,26 @@
 </head>
 <body>
 
-    <header>
-        <div class="logo-rf" style="font-weight: bold; font-size: 0.9em; line-height: 1.1;">République<br>Française</div>
-        <h1 style="margin: 0; font-size: 1.5em;">TRACE_SCAN</h1>
-    </header>
+<link rel="stylesheet" href="dsfr-v1.14.3/dist/dsfr.min.css"> <link rel="apple-touch-icon" href="dsfr-v1.14.3/dist/favicon/apple-touch-icon.png"> <link rel="icon" href="dsfr-v1.14.3/dist/favicon/favicon.svg" type="image/svg+xml"> <link rel="shortcut icon" href="dsfr-v1.14.3/dist/favicon/favicon.ico" type="image/x-icon">
+
+<header role="banner" class="fr-header">
+    <div class="fr-header__body">
+        <div class="fr-container">
+            <div class="fr-header__body-row">
+                <div class="fr-header__brand">
+                    <div class="fr-header__brand-top">
+                        <div class="fr-header__logo">
+                            <p class="fr-logo">
+                                République
+                                <br>Française
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
 
 <main>
     <div id="reader-container">

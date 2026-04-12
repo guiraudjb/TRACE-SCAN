@@ -193,36 +193,58 @@
         }
 
         async function terminerSession() {
-            if (scanList.length === 0) return alert("Aucun scan n'a été effectué.");
+    if (scanList.length === 0) {
+        return alert("Aucun scan n'a été effectué.");
+    }
 
-            const now = new Date();
-            const dateStr = now.toISOString().split('T')[0];
-            const timeStr = now.getHours().toString().padStart(2,'0') + now.getMinutes().toString().padStart(2,'0');
-            const fileName = `scan_trace_${dateStr}_${timeStr}.txt`;
+    // 1. Préparation du nom de fichier
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.getHours().toString().padStart(2, '0') + now.getMinutes().toString().padStart(2, '0');
+    const fileName = `scan_trace_${dateStr}_${timeStr}.txt`;
 
-            const content = scanList.join('\n');
-            const file = new File([content], fileName, { type: 'text/plain;charset=utf-8' });
+    // 2. Préparation du contenu en UTF-8
+    const content = scanList.join('\n');
+    
+    // Le préfixe "\ufeff" est le BOM UTF-8. 
+    // Il force les logiciels comme Excel ou Notepad à reconnaître l'encodage immédiatement.
+    const blob = new Blob(["\ufeff", content], { type: 'text/plain;charset=utf-8' });
 
-            // Tentative d'utilisation de l'API Web Share (partage natif mobile)
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Inventaire TRACE_SCAN',
-                        text: 'Fichier d\'inventaire joint.'
-                    });
-                } catch (e) { 
-                    console.log("Partage annulé ou échoué", e); 
-                }
-            } else {
-                // Solution de repli : téléchargement classique du fichier
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(file);
-                link.download = fileName;
-                link.click();
-                URL.revokeObjectURL(link.href); // Libère la mémoire
+    // 3. Tentative de partage natif (Mobile / PWA)
+    if (navigator.share && navigator.canShare) {
+        const file = new File([blob], fileName, { type: 'text/plain' });
+        if (navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'Export TRACE_SCAN',
+                    text: `Inventaire du ${dateStr}`
+                });
+                return; // Sortie si le partage réussit
+            } catch (e) {
+                console.log("Partage annulé ou non supporté, repli sur le téléchargement.");
             }
         }
+    }
+
+    // 4. Méthode de secours : Téléchargement forcé
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    link.href = url;
+    link.download = fileName;
+    link.style.display = 'none'; // Invisible
+
+    // CRITIQUE : Il faut ajouter le lien au document pour que Safari/Chrome Mobile valident le clic
+    document.body.appendChild(link);
+    link.click();
+
+    // Nettoyage propre
+    setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    }, 200);
+}
 
         window.addEventListener('load', () => {
             // INITIALISATION CORRIGÉE : formatsToSupport est placé dans le constructeur

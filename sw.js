@@ -1,7 +1,6 @@
-/* Service Worker TRACE_SCAN v1.1 */
-const CACHE_NAME = 'trace-scan-cache-v2.0';
+/* Service Worker TRACE_SCAN v2.1 */
+const CACHE_NAME = 'trace-scan-cache-v2.2';
 
-// Liste des ressources locales à mettre en cache
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -9,7 +8,7 @@ const ASSETS_TO_CACHE = [
   './app.js',
   './storage.js',
   './manifest.json',
-  './html5-qrcode.min.js' // La librairie est maintenant servie localement
+  './html5-qrcode.min.js'
 ];
 
 self.addEventListener('install', (event) => {

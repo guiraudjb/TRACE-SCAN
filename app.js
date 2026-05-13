@@ -20,7 +20,6 @@ function notify(msg, isError = false) {
     setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// --- GESTION ANTI-VEILLE (WAKE LOCK) ---
 async function toggleWakeLock(active) {
     if (!('wakeLock' in navigator)) return;
     try {
@@ -68,53 +67,74 @@ function onScanSuccess(decodedText) {
     
     if (result.success) {
         if (navigator.vibrate) navigator.vibrate(100);
-        const project = StorageManager.getProject(currentProjectId);
-        updateScanUI(project);
+        updateScanUI(StorageManager.getProject(currentProjectId));
     } else if (result.isDuplicate) {
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-        notify("Matériel déjà présent dans la liste", true);
+        notify("Meuble déjà présent dans la liste", true);
     }
 }
 
+// Correction XSS : Utilisation de textContent
 function updateScanUI(project) {
     document.getElementById('scan-counter').textContent = project.items.length;
     const list = document.getElementById('scanned-items');
+    list.innerHTML = '';
     
-    // On copie le tableau pour ne pas altérer les données sauvegardées
     let displayItems = project.items.slice(); 
+    if (isSortedAlphabetically) displayItems.sort((a, b) => a.localeCompare(b));
+    else displayItems.reverse(); 
     
-    if (isSortedAlphabetically) {
-        // Tri alphabétique croissant
-        displayItems.sort((a, b) => a.localeCompare(b));
-    } else {
-        // Tri chronologique inversé (le plus récent en haut, par défaut)
-        displayItems.reverse(); 
-    }
-    
-    list.innerHTML = displayItems.map(item => `<li>${item}</li>`).join('');
+    displayItems.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        list.appendChild(li);
+    });
 }
-// --- AFFICHAGE ACCUEIL ---
+
+// Correction XSS : Construction DOM sécurisée
 function renderProjectList() {
     const container = document.getElementById('project-list');
     const projects = StorageManager.getProjects();
+    container.innerHTML = '';
     
     if (projects.length === 0) {
         container.innerHTML = `<p style="text-align:center; color:#666;">Aucun projet en cours</p>`;
         return;
     }
 
-    container.innerHTML = projects.map(p => `
-        <div class="card">
-            <div>
-                <strong>${p.name}</strong><br>
-                <small>${p.items.length} article(s)</small>
-            </div>
-            <div style="display:flex; gap:5px;">
-                <button class="btn btn-primary btn-sm" onclick="startScanner('${p.id}')">Ouvrir</button>
-                <button class="btn btn-danger btn-sm" onclick="confirmDelete('${p.id}')">🗑️</button>
-            </div>
-        </div>
-    `).join('');
+    projects.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        
+        const info = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = p.name;
+        info.appendChild(title);
+        info.appendChild(document.createElement('br'));
+        const meta = document.createElement('small');
+        meta.textContent = `${p.items.length} article(s)`;
+        info.appendChild(meta);
+        
+        const actions = document.createElement('div');
+        actions.style.display = 'flex';
+        actions.style.gap = '5px';
+        
+        const btnOpen = document.createElement('button');
+        btnOpen.className = 'btn btn-primary btn-sm';
+        btnOpen.textContent = 'Ouvrir';
+        btnOpen.onclick = () => startScanner(p.id);
+        
+        const btnDel = document.createElement('button');
+        btnDel.className = 'btn btn-danger btn-sm';
+        btnDel.textContent = '🗑️';
+        btnDel.onclick = () => confirmDelete(p.id);
+        
+        actions.appendChild(btnOpen);
+        actions.appendChild(btnDel);
+        card.appendChild(info);
+        card.appendChild(actions);
+        container.appendChild(card);
+    });
 }
 
 function confirmDelete(id) {
@@ -124,15 +144,12 @@ function confirmDelete(id) {
     }
 }
 
-
-
-// --- INITIALISATION ET ÉVÉNEMENTS ---
 document.addEventListener('DOMContentLoaded', () => {
-    
+    // Correction : Échappement CSV
     document.getElementById('btn-export-csv').addEventListener('click', () => {
         const p = StorageManager.getProject(currentProjectId);
-        const content = "Code_QR\n" + p.items.join("\n");
-        const blob = new Blob([content], { type: 'text/csv' });
+        const csvContent = "Code_QR\n" + p.items.map(item => `"${item.replace(/"/g, '""')}"`).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -140,37 +157,21 @@ document.addEventListener('DOMContentLoaded', () => {
         a.click();
     });
     
-    // --- GESTION DE L'IMPORT CSV ---
-    document.getElementById('btn-import-csv').addEventListener('click', () => {
-        document.getElementById('input-file-csv').click();
-    });
+    document.getElementById('btn-import-csv').addEventListener('click', () => document.getElementById('input-file-csv').click());
 
     document.getElementById('input-file-csv').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        
         const reader = new FileReader();
         reader.onload = (event) => {
             const text = event.target.result;
-            
-            // Découpage du fichier texte ligne par ligne
-            // On gère les retours à la ligne Windows (\r\n) et Linux/Mac (\n)
-            let lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
-            
-            // Si la première ligne est l'en-tête, on la supprime
-            if (lines.length > 0 && (lines[0].toLowerCase() === "code_qr" || lines[0].toLowerCase().includes("code"))) {
-                lines.shift(); 
-            }
-            
+            let lines = text.split(/\r?\n/).map(line => line.trim().replace(/^"|"$/g, '')).filter(line => line.length > 0);
+            if (lines.length > 0 && lines[0].toLowerCase().includes("code")) lines.shift(); 
             if (lines.length > 0) {
                 StorageManager.importCSVProject(file.name, lines);
                 notify(`Projet créé avec ${lines.length} article(s).`);
                 renderProjectList();
-            } else {
-                notify("Le fichier CSV est vide ou invalide.", true);
             }
-            
-            // Réinitialise l'input pour pouvoir réimporter le même fichier si besoin
             e.target.value = ''; 
         };
         reader.readAsText(file);
@@ -185,21 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
         a.click();
     });
 
-    document.getElementById('btn-import-db').addEventListener('click', () => {
-        document.getElementById('input-file-import').click();
-    });
+    document.getElementById('btn-import-db').addEventListener('click', () => document.getElementById('input-file-import').click());
     
     document.getElementById('btn-toggle-sort').addEventListener('click', (e) => {
         isSortedAlphabetically = !isSortedAlphabetically;
-        
-        // Changement du texte du bouton selon l'état
         e.target.textContent = isSortedAlphabetically ? "Trier : Récent" : "Trier : A-Z";
-        
-        // Rafraîchissement de la liste
-        if (currentProjectId) {
-            const project = StorageManager.getProject(currentProjectId);
-            updateScanUI(project);
-        }
+        if (currentProjectId) updateScanUI(StorageManager.getProject(currentProjectId));
     });
 
     document.getElementById('input-file-import').addEventListener('change', (e) => {
@@ -210,28 +202,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (StorageManager.importBackup(event.target.result)) {
                 notify("Import réussi");
                 renderProjectList();
-            } else {
-                notify("Fichier invalide", true);
-            }
+            } else notify("Fichier invalide", true);
         };
         reader.readAsText(file);
     });
 
     document.getElementById('btn-new-project').addEventListener('click', () => {
         const name = prompt("Nom de l'emplacement (optionnel) :");
-        const p = StorageManager.createProject(name);
-        startScanner(p.id);
+        if (name !== null) startScanner(StorageManager.createProject(name).id);
     });
 
     document.getElementById('btn-back').addEventListener('click', () => showView('view-home'));
 
-    // Réactivation de l'anti-veille si l'app revient au premier plan
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible' && currentProjectId) {
-            toggleWakeLock(true);
-        }
+        if (document.visibilityState === 'visible' && currentProjectId) toggleWakeLock(true);
     });
 
-    // Rendu initial
     renderProjectList();
 });

@@ -3,18 +3,23 @@
 .hidden { display: none !important; }
 
 /* Zone Scan spécifique */
-#reader { width: 100%; background: #000; overflow: hidden; }
+/* --- Dans styles.css, modifiez la règle #reader --- */
+#reader { 
+    width: 100%; 
+    background: #000; 
+    overflow: hidden; 
+    flex-shrink: 0; /* CRITIQUE : Empêche la liste de réduire la taille de la caméra */
+    min-height: 300px; /* Assure une zone minimale stable */
+}
 
-/* Liste des scans défilante */
+/* Assurez-vous aussi que la liste ne dépasse pas sa zone */
 #scanned-items { 
-    list-style: none; 
-    padding: 0; 
-    margin: 0;
     flex-grow: 1;
     overflow-y: auto;
-    max-height: 45vh;
-    border-top: 2px solid var(--border-default-grey); /* Variable native DSFR */
+    /* On s'assure que le scroll reste interne à la liste */
 }
+/* Liste des scans défilante */
+
 #scanned-items li { 
     padding: 1rem 0.5rem; 
     border-bottom: 1px solid var(--border-default-grey); 

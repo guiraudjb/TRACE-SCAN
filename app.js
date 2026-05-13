@@ -49,7 +49,11 @@ async function startScanner(projectId) {
     try {
         await scanner.start(
             { facingMode: "environment" },
-            { fps: 10, qrbox: 250 },
+            { fps: 10, qrbox: (viewfinderWidth, viewfinderHeight) => {
+                    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                    const size = Math.floor(minEdge * 0.7); // Le carré prendra 70% du côté le plus petit
+                    return { width: size, height: size };
+                } },
             onScanSuccess
         );
     } catch (e) { notify("Erreur caméra", true); }

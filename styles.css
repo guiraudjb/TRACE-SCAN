@@ -37,3 +37,27 @@
     background: var(--background-contrast-error); 
     color: var(--text-default-error); 
 }
+/* Ajustements spécifiques pour l'en-tête DSFR sur mobile */
+.fr-header__logo {
+    flex-shrink: 0;
+}
+
+.fr-header__service {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.fr-header__service-title {
+    font-size: 1.25rem !important;
+    line-height: 1.5rem !important;
+}
+
+/* On réduit la taille du logo Marianne sur les petits écrans d'agents */
+@media (max-width: 48em) {
+    .fr-logo {
+        font-size: 0.9rem !important;
+    }
+    .fr-header__service-tagline {
+        display: none; /* On cache le slogan pour gagner de la place en mode Scan */
+    }
+}

@@ -1,0 +1,73 @@
+:root {
+    --blue-france: #000091;
+    --red-marianne: #e1000f;
+    --grey-bg: #f6f6f6;
+    --white: #ffffff;
+    --text-main: #161616;
+    --border-default: #e5e5e5;
+}
+
+body {
+    font-family: 'Marianne', Arial, sans-serif;
+    margin: 0;
+    background-color: var(--grey-bg);
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* En-tête */
+header {
+    background-color: var(--white);
+    padding: 1rem;
+    border-bottom: 2px solid var(--blue-france);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+h1 { font-size: 1.1rem; margin: 0; color: var(--blue-france); }
+
+/* Vues */
+.view { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.hidden { display: none !important; }
+
+main { flex-grow: 1; overflow-y: auto; padding: 1rem; }
+
+/* Boutons */
+.btn {
+    border: none; border-radius: 4px; padding: 0.6rem 1rem;
+    font-weight: bold; cursor: pointer; font-family: inherit;
+}
+.btn-primary { background: var(--blue-france); color: white; }
+.btn-secondary { background: white; color: var(--blue-france); border: 1px solid var(--blue-france); }
+.btn-danger { background: white; color: var(--red-marianne); border: 1px solid var(--red-marianne); }
+.btn-sm { padding: 0.4rem 0.6rem; font-size: 0.85rem; }
+
+/* Listes de projets */
+.card {
+    background: white; border: 1px solid var(--border-default);
+    padding: 1rem; margin-bottom: 0.75rem; border-radius: 4px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+
+/* Zone Scan */
+#reader { width: 100%; background: #000; border-radius: 8px; overflow: hidden; }
+#scanned-items { list-style: none; padding: 0; margin-top: 1rem; }
+#scanned-items li { 
+    padding: 0.5rem; border-bottom: 1px solid var(--border-default); 
+    font-family: monospace; background: white; 
+}
+
+/* Notification Toast */
+#toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    background: #333; color: white; padding: 0.8rem 1.5rem;
+    border-radius: 50px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    z-index: 1000; text-align: center; width: 80%;
+}
+#toast.show { opacity: 1; }
+#toast.error { background: var(--red-marianne); }

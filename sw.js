@@ -1,10 +1,13 @@
 /* Service Worker TRACE_SCAN v1.1 */
-const CACHE_NAME = 'trace-scan-cache-v1.2';
+const CACHE_NAME = 'trace-scan-cache-v1.3';
 
 // Liste des ressources locales à mettre en cache
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
+  './styles.css',
+  './app.js',
+  './storage.js',
   './manifest.json',
   './html5-qrcode.min.js' // La librairie est maintenant servie localement
 ];

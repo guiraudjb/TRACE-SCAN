@@ -56,10 +56,22 @@ main { flex-grow: 1; overflow-y: auto; padding: 1rem; }
 
 /* Zone Scan */
 #reader { width: 100%; background: #000; border-radius: 8px; overflow: hidden; }
-#scanned-items { list-style: none; padding: 0; margin-top: 1rem; }
+/* Zone Scan : Liste défilante */
+#scanned-items { 
+    list-style: none; 
+    padding: 0; 
+    margin: 0;
+    flex-grow: 1;
+    overflow-y: auto; /* Force l'apparition d'une barre de défilement */
+    max-height: 45vh; /* Limite la hauteur pour ne pas pousser hors de l'écran */
+    border-top: 2px solid var(--border-default);
+}
 #scanned-items li { 
-    padding: 0.5rem; border-bottom: 1px solid var(--border-default); 
-    font-family: monospace; background: white; 
+    padding: 0.8rem 0.5rem; 
+    border-bottom: 1px solid var(--border-default); 
+    font-family: monospace; 
+    background: white; 
+    font-size: 1.1rem;
 }
 
 /* Notification Toast */

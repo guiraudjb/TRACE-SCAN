@@ -1,6 +1,7 @@
 let currentProjectId = null;
 let scanner = null;
 let wakeLock = null;
+let isSortedAlphabetically = false;
 
 // --- NAVIGATION ---
 function showView(viewId) {
@@ -78,9 +79,20 @@ function onScanSuccess(decodedText) {
 function updateScanUI(project) {
     document.getElementById('scan-counter').textContent = project.items.length;
     const list = document.getElementById('scanned-items');
-    list.innerHTML = project.items.slice().reverse().map(item => `<li>${item}</li>`).join('');
+    
+    // On copie le tableau pour ne pas altérer les données sauvegardées
+    let displayItems = project.items.slice(); 
+    
+    if (isSortedAlphabetically) {
+        // Tri alphabétique croissant
+        displayItems.sort((a, b) => a.localeCompare(b));
+    } else {
+        // Tri chronologique inversé (le plus récent en haut, par défaut)
+        displayItems.reverse(); 
+    }
+    
+    list.innerHTML = displayItems.map(item => `<li>${item}</li>`).join('');
 }
-
 // --- AFFICHAGE ACCUEIL ---
 function renderProjectList() {
     const container = document.getElementById('project-list');
@@ -137,6 +149,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-import-db').addEventListener('click', () => {
         document.getElementById('input-file-import').click();
+    });
+    
+    document.getElementById('btn-toggle-sort').addEventListener('click', (e) => {
+        isSortedAlphabetically = !isSortedAlphabetically;
+        
+        // Changement du texte du bouton selon l'état
+        e.target.textContent = isSortedAlphabetically ? "Trier : Récent" : "Trier : A-Z";
+        
+        // Rafraîchissement de la liste
+        if (currentProjectId) {
+            const project = StorageManager.getProject(currentProjectId);
+            updateScanUI(project);
+        }
     });
 
     document.getElementById('input-file-import').addEventListener('change', (e) => {

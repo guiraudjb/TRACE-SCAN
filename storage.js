@@ -74,3 +74,18 @@ const StorageManager = {
         }
     }
 };
+
+// Créer un nouveau projet à partir d'une liste brute de codes (Import CSV)
+    importCSVProject(fileName, itemsArray) {
+        const projects = this.getProjects();
+        const newProject = {
+            id: "csv_" + Date.now().toString(),
+            name: fileName.replace('.csv', '') + " (Importé)",
+            timestamp: new Date().toISOString(),
+            // On s'assure de ne pas importer de doublons depuis le CSV
+            items: [...new Set(itemsArray)] 
+        };
+        projects.push(newProject);
+        this.saveAll(projects);
+        return true;
+    }

@@ -12,15 +12,18 @@
     <div id="view-home" class="view">
         <header>
             <h1>TRACE_SCAN</h1>
-            <div style="display: flex; gap: 5px;">
-                <button class="btn btn-secondary btn-sm" id="btn-import-db">📥 Import</button>
-                <button class="btn btn-secondary btn-sm" id="btn-export-db">📤 Backup</button>
+            <div style="display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
+                <button class="btn btn-secondary btn-sm" id="btn-import-csv" title="Importer un projet depuis un CSV">📄 +CSV</button>
+                <button class="btn btn-secondary btn-sm" id="btn-import-db" title="Restaurer une sauvegarde JSON">📥 Backup</button>
+                <button class="btn btn-secondary btn-sm" id="btn-export-db" title="Créer une sauvegarde JSON">📤 Backup</button>
             </div>
         </header>
         <main>
             <button class="btn btn-primary" id="btn-new-project" style="width: 100%; margin-bottom: 1.5rem;">+ Nouvel Inventaire</button>
             <div id="project-list"></div>
+            
             <input type="file" id="input-file-import" class="hidden" accept=".json">
+            <input type="file" id="input-file-csv" class="hidden" accept=".csv">
         </main>
     </div>
 

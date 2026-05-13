@@ -124,6 +124,8 @@ function confirmDelete(id) {
     }
 }
 
+
+
 // --- INITIALISATION ET ÉVÉNEMENTS ---
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -136,6 +138,42 @@ document.addEventListener('DOMContentLoaded', () => {
         a.href = url;
         a.download = `Inventaire_${p.name.replace(/ /g, '_')}.csv`;
         a.click();
+    });
+    
+    // --- GESTION DE L'IMPORT CSV ---
+    document.getElementById('btn-import-csv').addEventListener('click', () => {
+        document.getElementById('input-file-csv').click();
+    });
+
+    document.getElementById('input-file-csv').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const text = event.target.result;
+            
+            // Découpage du fichier texte ligne par ligne
+            // On gère les retours à la ligne Windows (\r\n) et Linux/Mac (\n)
+            let lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+            
+            // Si la première ligne est l'en-tête, on la supprime
+            if (lines.length > 0 && (lines[0].toLowerCase() === "code_qr" || lines[0].toLowerCase().includes("code"))) {
+                lines.shift(); 
+            }
+            
+            if (lines.length > 0) {
+                StorageManager.importCSVProject(file.name, lines);
+                notify(`Projet créé avec ${lines.length} article(s).`);
+                renderProjectList();
+            } else {
+                notify("Le fichier CSV est vide ou invalide.", true);
+            }
+            
+            // Réinitialise l'input pour pouvoir réimporter le même fichier si besoin
+            e.target.value = ''; 
+        };
+        reader.readAsText(file);
     });
 
     document.getElementById('btn-export-db').addEventListener('click', () => {

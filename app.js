@@ -92,47 +92,61 @@ function updateScanUI(project) {
 }
 
 // Correction XSS : Construction DOM sécurisée
+// Correction XSS et intégration des classes DSFR
 function renderProjectList() {
     const container = document.getElementById('project-list');
     const projects = StorageManager.getProjects();
     container.innerHTML = '';
     
     if (projects.length === 0) {
-        container.innerHTML = `<p style="text-align:center; color:#666;">Aucun projet en cours</p>`;
+        container.innerHTML = `<p style="text-align:center; color: var(--text-mention-grey);">Aucun projet en cours</p>`;
         return;
     }
 
     projects.forEach(p => {
+        // Conteneur principal de la carte
         const card = document.createElement('div');
-        card.className = 'card';
+        card.className = 'fr-card fr-mb-2w';
         
-        const info = document.createElement('div');
-        const title = document.createElement('strong');
+        const body = document.createElement('div');
+        body.className = 'fr-card__body';
+        
+        const content = document.createElement('div');
+        content.className = 'fr-card__content';
+        
+        // Titre
+        const title = document.createElement('h3');
+        title.className = 'fr-card__title';
         title.textContent = p.name;
-        info.appendChild(title);
-        info.appendChild(document.createElement('br'));
-        const meta = document.createElement('small');
-        meta.textContent = `${p.items.length} article(s)`;
-        info.appendChild(meta);
         
-        const actions = document.createElement('div');
-        actions.style.display = 'flex';
-        actions.style.gap = '5px';
+        // Description
+        const desc = document.createElement('p');
+        desc.className = 'fr-card__desc';
+        desc.textContent = `${p.items.length} article(s) scanné(s)`;
+        
+        // Zone des boutons
+        const end = document.createElement('div');
+        end.className = 'fr-card__end fr-mt-2w';
+        end.style.display = 'flex';
+        end.style.gap = '10px';
         
         const btnOpen = document.createElement('button');
-        btnOpen.className = 'btn btn-primary btn-sm';
+        btnOpen.className = 'fr-btn fr-btn--sm';
         btnOpen.textContent = 'Ouvrir';
         btnOpen.onclick = () => startScanner(p.id);
         
         const btnDel = document.createElement('button');
-        btnDel.className = 'btn btn-danger btn-sm';
-        btnDel.textContent = '🗑️';
+        btnDel.className = 'fr-btn fr-btn--secondary fr-btn--sm fr-icon-delete-line';
+        btnDel.title = 'Supprimer';
         btnDel.onclick = () => confirmDelete(p.id);
         
-        actions.appendChild(btnOpen);
-        actions.appendChild(btnDel);
-        card.appendChild(info);
-        card.appendChild(actions);
+        end.appendChild(btnOpen);
+        end.appendChild(btnDel);
+        content.appendChild(title);
+        content.appendChild(desc);
+        content.appendChild(end);
+        body.appendChild(content);
+        card.appendChild(body);
         container.appendChild(card);
     });
 }

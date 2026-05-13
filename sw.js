@@ -8,7 +8,11 @@ const ASSETS_TO_CACHE = [
   './app.js',
   './storage.js',
   './manifest.json',
-  './html5-qrcode.min.js'
+  './html5-qrcode.min.js',
+  './dsfr-v1.14.3/dist/dsfr/dsfr.main.min.css',
+  './dsfr-v1.14.3/dist/utility/utility.main.min.css',
+  './dsfr-v1.14.3/dist/dsfr/dsfr.module.min.js',
+  './dsfr-v1.14.3/dist/dsfr/dsfr.nomodule.min.js'
 ];
 
 self.addEventListener('install', (event) => {

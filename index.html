@@ -1,25 +1,49 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-fr-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TRACE_SCAN - Inventaire Nomade</title>
     <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="./dsfr-v1.14.3/dist/dsfr/dsfr.main.min.css">
+    <link rel="stylesheet" href="./dsfr-v1.14.3/dist/utility/utility.main.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
     <div id="view-home" class="view">
-        <header>
-            <h1>TRACE_SCAN</h1>
-            <div style="display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
-                <button class="btn btn-secondary btn-sm" id="btn-import-csv" title="Importer un projet depuis un CSV">📄 +CSV</button>
-                <button class="btn btn-secondary btn-sm" id="btn-import-db" title="Restaurer une sauvegarde JSON">📥 Restaurer</button>
-                <button class="btn btn-secondary btn-sm" id="btn-export-db" title="Créer une sauvegarde JSON">📤 Sauvegarder</button>
+        <header role="banner" class="fr-header">
+            <div class="fr-header__body">
+                <div class="fr-container">
+                    <div class="fr-header__body-row">
+                        <div class="fr-header__brand fr-enlarge-link">
+                            <div class="fr-header__brand-top">
+                                <div class="fr-header__logo">
+                                    <p class="fr-logo">République<br>Française</p>
+                                </div>
+                            </div>
+                            <div class="fr-header__service">
+                                <p class="fr-header__service-title">TRACE_SCAN</p>
+                            </div>
+                        </div>
+                        <div class="fr-header__tools">
+                            <div class="fr-header__tools-links">
+                                <ul class="fr-btns-group">
+                                    <li><button class="fr-btn fr-btn--secondary fr-btn--sm fr-icon-file-add-line" id="btn-import-csv" title="Importer CSV">CSV</button></li>
+                                    <li><button class="fr-btn fr-btn--secondary fr-btn--sm fr-icon-download-line" id="btn-import-db" title="Restaurer json">Restaurer</button></li>
+                                    <li><button class="fr-btn fr-btn--secondary fr-btn--sm fr-icon-upload-line" id="btn-export-db" title="Sauvegarder json">Sauvegarder</button></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
-        <main>
-            <button class="btn btn-primary" id="btn-new-project" style="width: 100%; margin-bottom: 1.5rem;">+ Nouvel Inventaire</button>
+        
+        <main class="fr-container fr-mt-3w" style="flex-grow: 1; overflow-y: auto;">
+            <button class="fr-btn fr-btn--icon-left fr-icon-add-circle-line fr-mb-3w" id="btn-new-project" style="width: 100%; justify-content: center;">
+                Nouvel Inventaire
+            </button>
             <div id="project-list"></div>
             
             <input type="file" id="input-file-import" class="hidden" accept=".json">
@@ -28,20 +52,35 @@
     </div>
 
     <div id="view-scan" class="view hidden">
-        <header>
-            <button class="btn btn-secondary btn-sm" id="btn-back">⬅ Retour</button>
-            <h1 id="active-project-name">Scan</h1>
-            <button class="btn btn-primary btn-sm" id="btn-export-csv">Exporter</button>
-        </header>
-        <main style="padding: 0;">
-            <div id="reader"></div>
-            <div style="padding: 1rem; display: flex; flex-direction: column; flex-grow: 1; overflow: hidden;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <strong>Scans : <span id="scan-counter" style="color: var(--blue-france);">0</span></strong>
-                <button class="btn btn-secondary btn-sm" id="btn-toggle-sort">Trier : A-Z</button>
+        <header role="banner" class="fr-header">
+            <div class="fr-header__body">
+                <div class="fr-container">
+                    <div class="fr-header__body-row">
+                        <div class="fr-header__brand fr-enlarge-link">
+                            <div class="fr-header__service">
+                                <p class="fr-header__service-title" id="active-project-name">Scan</p>
+                            </div>
+                        </div>
+                        <div class="fr-header__tools">
+                            <ul class="fr-btns-group">
+                                <li><button class="fr-btn fr-btn--secondary fr-btn--sm fr-icon-arrow-left-line" id="btn-back" title="Retour">Retour</button></li>
+                                <li><button class="fr-btn fr-btn--sm fr-icon-download-line" id="btn-export-csv" title="Exporter CSV">Export</button></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <ul id="scanned-items"></ul>
-    </div>
+        </header>
+
+        <main style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; padding: 0;">
+            <div id="reader"></div>
+            <div class="fr-container fr-mt-2w" style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <strong>Scans : <span id="scan-counter" style="color: var(--text-action-high-blue-france);">0</span></strong>
+                    <button class="fr-btn fr-btn--tertiary fr-btn--sm" id="btn-toggle-sort">Trier : A-Z</button>
+                </div>
+                <ul id="scanned-items"></ul>
+            </div>
         </main>
     </div>
 
@@ -50,5 +89,7 @@
     <script src="html5-qrcode.min.js"></script>
     <script src="storage.js"></script>
     <script src="app.js"></script>
+    <script type="module" src="./dsfr-v1.14.3/dist/dsfr/dsfr.module.min.js"></script>
+    <script type="text/javascript" nomodule src="./dsfr-v1.14.3/dist/dsfr/dsfr.nomodule.min.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 /* Service Worker TRACE_SCAN v1.1 */
-const CACHE_NAME = 'trace-scan-cache-v1.0';
+const CACHE_NAME = 'trace-scan-cache-v2.0';
 
 // Liste des ressources locales à mettre en cache
 const ASSETS_TO_CACHE = [

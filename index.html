@@ -8,277 +8,292 @@
     <style>
         :root {
             --blue-france: #000091;
-            --grey-border: #E5E5E5;
-            --text-color: #1e1e1e;
+            --red-marianne: #e1000f;
+            --grey-bg: #f6f6f6;
+            --white: #ffffff;
+            --text-main: #161616;
+            --border-default: #e5e5e5;
         }
 
         body {
             font-family: 'Marianne', Arial, sans-serif;
             margin: 0;
-            background-color: #f6f6f6;
+            background-color: var(--grey-bg);
+            color: var(--text-main);
             display: flex;
             flex-direction: column;
-            height: 100vh; /* Utilise toute la hauteur de l'écran */
-            overflow: hidden; /* Empêche le scroll global de la page */
+            height: 100vh;
+            overflow: hidden;
         }
 
+        /* En-tête */
         header {
-            flex-shrink: 0; /* L'en-tête ne rétrécit pas */
-            background-color: white;
-            padding: 10px 15px;
+            background-color: var(--white);
+            padding: 1rem;
             border-bottom: 2px solid var(--blue-france);
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        main {
-            flex-grow: 1; /* La zone de scan prend tout l'espace restant  */
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-            gap: 10px;
-            min-height: 0; /* Important pour le scroll interne */
+        h1 { font-size: 1.1rem; margin: 0; color: var(--blue-france); }
+
+        /* Vues */
+        .view { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        .hidden { display: none !important; }
+
+        main { flex-grow: 1; overflow-y: auto; padding: 1rem; }
+
+        /* Boutons */
+        .btn {
+            border: none; border-radius: 4px; padding: 0.6rem 1rem;
+            font-weight: bold; cursor: pointer; font-family: inherit;
+        }
+        .btn-primary { background: var(--blue-france); color: white; }
+        .btn-secondary { background: white; color: var(--blue-france); border: 1px solid var(--blue-france); }
+        .btn-danger { background: white; color: var(--red-marianne); border: 1px solid var(--red-marianne); }
+        .btn-sm { padding: 0.4rem 0.6rem; font-size: 0.85rem; }
+
+        /* Listes de projets */
+        .card {
+            background: white; border: 1px solid var(--border-default);
+            padding: 1rem; margin-bottom: 0.75rem; border-radius: 4px;
+            display: flex; justify-content: space-between; align-items: center;
         }
 
-        #reader-container {
-            flex-grow: 1; /* Maximise la zone de visée  */
-            position: relative;
-            background: black;
-            border-radius: 4px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
+        /* Zone Scan */
+        #reader { width: 100%; background: #000; border-radius: 8px; overflow: hidden; }
+        #scanned-items { list-style: none; padding: 0; margin-top: 1rem; }
+        #scanned-items li { 
+            padding: 0.5rem; border-bottom: 1px solid var(--border-default); 
+            font-family: monospace; background: white; 
         }
 
-        #reader { width: 100%; }
-
-        .dashboard {
-            flex-shrink: 0; /* Le panneau de contrôle reste toujours visible en bas */
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
+        /* Notification Toast */
+        #toast {
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+            background: #333; color: white; padding: 0.8rem 1.5rem;
+            border-radius: 50px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+            z-index: 1000; text-align: center; width: 80%;
         }
-
-        .scan-list-container {
-            max-height: 120px; /* Limite la hauteur de la liste */
-            overflow-y: auto; /* Active le scroll uniquement pour la liste */
-            margin: 5px 0;
-            border-top: 1px solid var(--grey-border);
-        }
-
-        .scan-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            font-family: monospace;
-            font-size: 0.85rem;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        button {
-            flex: 1;
-            padding: 14px; /* Boutons plus larges pour tactile */
-            font-weight: bold;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-primary { background-color: var(--blue-france); color: white; }
-        .btn-secondary { background-color: white; color: #666; border: 1px solid #ccc; }
-
-        /* Animation optionnelle pour le feedback de scan */
-        .scan-success {
-            outline: 4px solid #4CAF50;
-            transition: outline 0.1s;
-        }
+        #toast.show { opacity: 1; }
+        #toast.error { background: var(--red-marianne); }
     </style>
 </head>
 <body>
 
-<link rel="stylesheet" href="dsfr-v1.14.3/dist/dsfr.min.css"> <link rel="apple-touch-icon" href="dsfr-v1.14.3/dist/favicon/apple-touch-icon.png"> <link rel="icon" href="dsfr-v1.14.3/dist/favicon/favicon.svg" type="image/svg+xml"> <link rel="shortcut icon" href="dsfr-v1.14.3/dist/favicon/favicon.ico" type="image/x-icon">
-
-<header role="banner" class="fr-header">
-    <div class="fr-header__body">
-        <div class="fr-container">
-            <div class="fr-header__body-row">
-                <div class="fr-header__brand">
-                    <div class="fr-header__brand-top">
-                        <div class="fr-header__logo">
-                            <p class="fr-logo">
-                                République
-                                <br>Française
-                            </p>
-                        </div>
-                    </div>
-                </div>
+    <div id="view-home" class="view">
+        <header>
+            <h1>TRACE_SCAN</h1>
+            <div style="display: flex; gap: 5px;">
+                <button class="btn btn-secondary btn-sm" id="btn-import-db">📥 Import</button>
+                <button class="btn btn-secondary btn-sm" id="btn-export-db">📤 Backup</button>
             </div>
-        </div>
+        </header>
+        <main>
+            <button class="btn btn-primary" id="btn-new-project" style="width: 100%; margin-bottom: 1.5rem;">+ Nouvel Inventaire</button>
+            <div id="project-list"></div>
+            <input type="file" id="input-file-import" class="hidden" accept=".json">
+        </main>
     </div>
-</header>
 
-<main>
-    <div id="reader-container">
-        <div id="reader"></div>
+    <div id="view-scan" class="view hidden">
+        <header>
+            <button class="btn btn-secondary btn-sm" id="btn-back">⬅ Retour</button>
+            <h1 id="active-project-name">Scan</h1>
+            <button class="btn btn-primary btn-sm" id="btn-export-csv">Exporter</button>
+        </header>
+        <main style="padding: 0;">
+            <div id="reader"></div>
+            <div style="padding: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <strong>Articles scannés</strong>
+                    <span id="scan-counter" style="font-weight: bold; color: var(--blue-france);">0</span>
+                </div>
+                <ul id="scanned-items"></ul>
+            </div>
+        </main>
     </div>
-    
-    <div class="dashboard">
-        <div class="stats">
-            <strong>Total : <span id="total-count">0</span></strong> 
-        </div>
-        
-        <div class="scan-list-container">
-            <ul class="scan-list" id="recent-scans">
-                <li style="color:#999">En attente de scan...</li>
-            </ul>
-        </div>
-        
-        <div class="button-group">
-            <button class="btn-secondary" onclick="annulerDernier()">Annuler dernier</button> 
-            <button class="btn-primary" onclick="terminerSession()">Terminer la session</button> 
-        </div>
-    </div>
-</main>
 
-    <script src="./html5-qrcode.min.js"></script>
+    <div id="toast">Message</div>
 
+    <script src="html5-qrcode.min.js"></script>
+    <script src="storage.js"></script>
     <script>
-        // Enregistrement du Service Worker pour le mode PWA (Hors-ligne)
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-                .then(() => console.log('Mode Offline prêt.'))
-                .catch(err => console.error('Erreur PWA:', err));
+        let currentProjectId = null;
+        let scanner = null;
+        let wakeLock = null;
+
+        // --- NAVIGATION ---
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+            if (viewId === 'view-home') {
+                stopScanner();
+                renderProjectList();
+            }
         }
 
-        let scanList = [];
-        let html5QrCode;
+        function notify(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = isError ? 'show error' : 'show';
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // --- GESTION ANTI-VEILLE (WAKE LOCK) ---
+        async function toggleWakeLock(active) {
+            if (!('wakeLock' in navigator)) return;
+            try {
+                if (active) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } else if (wakeLock) {
+                    await wakeLock.release();
+                    wakeLock = null;
+                }
+            } catch (err) { console.error("WakeLock Error:", err); }
+        }
+
+        // --- LOGIQUE SCANNER ---
+        async function startScanner(projectId) {
+            currentProjectId = projectId;
+            const project = StorageManager.getProject(projectId);
+            document.getElementById('active-project-name').textContent = project.name;
+            updateScanUI(project);
+
+            showView('view-scan');
+            toggleWakeLock(true); // Bloque la veille
+
+            if (!scanner) {
+                scanner = new Html5Qrcode("reader", { formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE] });
+            }
+
+            try {
+                await scanner.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    onScanSuccess
+                );
+            } catch (e) { notify("Erreur caméra", true); }
+        }
+
+        async function stopScanner() {
+            if (scanner && scanner.isScanning) {
+                await scanner.stop();
+            }
+            toggleWakeLock(false); // Libère la veille
+        }
 
         function onScanSuccess(decodedText) {
-            // Empêche les doublons consécutifs (si l'utilisateur reste sur le même QR code)
-            if (scanList[scanList.length - 1] === decodedText) return;
-            html5QrCode.pause();
-            scanList.push(decodedText);
+            const result = StorageManager.addItemToProject(currentProjectId, decodedText);
             
-            // Retour visuel et haptique
-            const container = document.getElementById('reader-container');
-            container.classList.add('scan-success');
-            if (navigator.vibrate) navigator.vibrate(500);
-            
-            updateUI();
-            
-            setTimeout(() => {
-        container.classList.remove('scan-success');
-        html5QrCode.resume();
-        console.log("Scanner prêt pour le prochain scan.");
-    }, 1000);
-        }
-
-        function updateUI() {
-            document.getElementById('total-count').innerText = scanList.length;
-            const listElement = document.getElementById('recent-scans');
-            listElement.innerHTML = '';
-            
-            // Afficher les 5 derniers scans, le plus récent en haut
-            const recent = scanList.slice(-5).reverse();
-            recent.forEach((item) => {
-                const li = document.createElement('li');
-                li.textContent = item;
-                listElement.appendChild(li);
-            });
-        }
-
-        function annulerDernier() {
-            if (scanList.length > 0) {
-                scanList.pop();
-                updateUI();
-                
-                // Si la liste est vide après annulation, remettre le message d'attente
-                if (scanList.length === 0) {
-                    document.getElementById('recent-scans').innerHTML = '<li style="color:#999">En attente de scan...</li>';
-                }
+            if (result.success) {
+                // Succès : retour haptique léger
+                if (navigator.vibrate) navigator.vibrate(100);
+                const project = StorageManager.getProject(currentProjectId);
+                updateScanUI(project);
+            } else if (result.isDuplicate) {
+                // Doublon : signalement sonore/visuel (Évolution 4)
+                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                notify("Meuble déjà présent dans la liste", true);
             }
         }
 
-        async function terminerSession() {
-    if (scanList.length === 0) {
-        return alert("Aucun scan n'a été effectué.");
-    }
+        function updateScanUI(project) {
+            document.getElementById('scan-counter').textContent = project.items.length;
+            const list = document.getElementById('scanned-items');
+            list.innerHTML = project.items.slice().reverse().map(item => `<li>${item}</li>`).join('');
+        }
 
-    // 1. Préparation du nom de fichier
-    const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const timeStr = now.getHours().toString().padStart(2, '0') + now.getMinutes().toString().padStart(2, '0');
-    const fileName = `scan_trace_${dateStr}_${timeStr}.txt`;
+        // --- AFFICHAGE ACCUEIL ---
+        function renderProjectList() {
+            const container = document.getElementById('project-list');
+            const projects = StorageManager.getProjects();
+            
+            if (projects.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:#666;">Aucun projet en cours</p>`;
+                return;
+            }
 
-    // 2. Préparation du contenu en UTF-8
-    const content = scanList.join('\n');
-    
-    // Le préfixe "\ufeff" est le BOM UTF-8. 
-    // Il force les logiciels comme Excel ou Notepad à reconnaître l'encodage immédiatement.
-    const blob = new Blob(["\ufeff", content], { type: 'text/plain;charset=utf-8' });
+            container.innerHTML = projects.map(p => `
+                <div class="card">
+                    <div>
+                        <strong>${p.name}</strong><br>
+                        <small>${p.items.length} article(s)</small>
+                    </div>
+                    <div style="display:flex; gap:5px;">
+                        <button class="btn btn-primary btn-sm" onclick="startScanner('${p.id}')">Ouvrir</button>
+                        <button class="btn btn-danger btn-sm" onclick="confirmDelete('${p.id}')">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
 
-    // 3. Tentative de partage natif (Mobile / PWA)
-    if (navigator.share && navigator.canShare) {
-        const file = new File([blob], fileName, { type: 'text/plain' });
-        if (navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: 'Export TRACE_SCAN',
-                    text: `Inventaire du ${dateStr}`
-                });
-                return; // Sortie si le partage réussit
-            } catch (e) {
-                console.log("Partage annulé ou non supporté, repli sur le téléchargement.");
+        function confirmDelete(id) {
+            if (confirm("Supprimer cet inventaire ?")) {
+                StorageManager.deleteProject(id);
+                renderProjectList();
             }
         }
-    }
 
-    // 4. Méthode de secours : Téléchargement forcé
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    
-    link.href = url;
-    link.download = fileName;
-    link.style.display = 'none'; // Invisible
-
-    // CRITIQUE : Il faut ajouter le lien au document pour que Safari/Chrome Mobile valident le clic
-    document.body.appendChild(link);
-    link.click();
-
-    // Nettoyage propre
-    setTimeout(() => {
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-    }, 200);
-}
-
-        window.addEventListener('load', () => {
-            // INITIALISATION CORRIGÉE : formatsToSupport est placé dans le constructeur
-            html5QrCode = new Html5Qrcode("reader", { 
-                formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ] 
-            });
-
-            // Démarrage de la caméra avec les options d'affichage
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                { 
-                    fps: 15, 
-                    qrbox: { width: 250, height: 250 }
-                },
-                onScanSuccess,
-                () => { /* Les erreurs de lecture (non-détection) sont ignorées silencieusement */ }
-            ).catch(err => console.error("Erreur d'accès à la caméra :", err));
+        // --- EXPORT / IMPORT ---
+        document.getElementById('btn-export-csv').addEventListener('click', () => {
+            const p = StorageManager.getProject(currentProjectId);
+            const content = "Code_QR\n" + p.items.join("\n");
+            const blob = new Blob([content], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Inventaire_${p.name.replace(/ /g, '_')}.csv`;
+            a.click();
         });
+
+        document.getElementById('btn-export-db').addEventListener('click', () => {
+            const data = StorageManager.getBackupData();
+            const blob = new Blob([data], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `TRACE_SCAN_Backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        });
+
+        document.getElementById('btn-import-db').addEventListener('click', () => {
+            document.getElementById('input-file-import').click();
+        });
+
+        document.getElementById('input-file-import').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                if (StorageManager.importBackup(event.target.result)) {
+                    notify("Import réussi");
+                    renderProjectList();
+                } else {
+                    notify("Fichier invalide", true);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // --- INIT ---
+        document.getElementById('btn-new-project').addEventListener('click', () => {
+            const name = prompt("Nom de l'emplacement (optionnel) :");
+            const p = StorageManager.createProject(name);
+            startScanner(p.id);
+        });
+
+        document.getElementById('btn-back').addEventListener('click', () => showView('view-home'));
+
+        // Réactivation de l'anti-veille si l'app revient au premier plan
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && currentProjectId) {
+                toggleWakeLock(true);
+            }
+        });
+
+        window.onload = renderProjectList;
     </script>
 </body>
 </html>

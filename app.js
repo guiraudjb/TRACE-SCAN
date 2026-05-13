@@ -49,7 +49,7 @@ async function startScanner(projectId) {
     try {
         await scanner.start(
             { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 250 } },
+            { fps: 10, qrbox: 250 },
             onScanSuccess
         );
     } catch (e) { notify("Erreur caméra", true); }

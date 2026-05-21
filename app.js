@@ -54,11 +54,16 @@ async function startScanner(projectId) {
     try {
         await scanner.start(
             { facingMode: "environment" },
-            { fps: 10, qrbox: (viewfinderWidth, viewfinderHeight) => {
-                    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                    const size = Math.floor(minEdge * 0.7); // Le carré prendra 70% du côté le plus petit
-                    return { width: size, height: size };
-                } },
+            { 
+                fps: 10, 
+                // Transformation du viseur en rectangle (80% de largeur, 30% de hauteur)
+                qrbox: (viewfinderWidth, viewfinderHeight) => {
+                    return { 
+                        width: Math.floor(viewfinderWidth * 0.8), 
+                        height: Math.floor(viewfinderHeight * 0.3) 
+                    };
+                } 
+            },
             onScanSuccess
         );
     } catch (e) { notify("Erreur caméra", true); }

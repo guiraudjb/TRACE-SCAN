@@ -43,9 +43,14 @@ async function startScanner(projectId) {
     toggleWakeLock(true);
 
     if (!scanner) {
-        scanner = new Html5Qrcode("reader", { formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE] });
+        // Ajout du support pour les QR Codes ET les Codes-barres 1D (Code 128)
+        scanner = new Html5Qrcode("reader", { 
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.CODE_128
+            ] 
+        });
     }
-
     try {
         await scanner.start(
             { facingMode: "environment" },
@@ -166,7 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Correction : Échappement CSV
     document.getElementById('btn-export-csv').addEventListener('click', () => {
         const p = StorageManager.getProject(currentProjectId);
-        const csvContent = "Code_QR\n" + p.items.map(item => `"${item.replace(/"/g, '""')}"`).join("\n");
+        const csvContent = "Code_Inventaire\n" + p.items.join("\n");
+        
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

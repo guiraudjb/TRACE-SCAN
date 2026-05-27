@@ -56,6 +56,36 @@
     font-size: 1.25rem !important;
     line-height: 1.5rem !important;
 }
+/* Nouveaux styles pour les éléments avec commentaires */
+.item-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+}
+
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    color: var(--text-title-grey);
+}
+
+.item-comment-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-default-grey);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    background-color: var(--background-default-grey);
+}
+
+.item-comment-input:focus {
+    outline: 2px solid var(--border-plain-blue-france);
+    outline-offset: -2px;
+}
 
 /* On réduit la taille du logo Marianne sur les petits écrans d'agents */
 @media (max-width: 48em) {

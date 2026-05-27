@@ -43,7 +43,6 @@ async function startScanner(projectId) {
     toggleWakeLock(true);
 
     if (!scanner) {
-        // Ajout du support pour les QR Codes ET les Codes-barres 1D (Code 128)
         scanner = new Html5Qrcode("reader", { 
             formatsToSupport: [
                 Html5QrcodeSupportedFormats.QR_CODE,
@@ -56,7 +55,6 @@ async function startScanner(projectId) {
             { facingMode: "environment" },
             { 
                 fps: 10, 
-                // Transformation du viseur en rectangle (80% de largeur, 30% de hauteur)
                 qrbox: (viewfinderWidth, viewfinderHeight) => {
                     return { 
                         width: Math.floor(viewfinderWidth * 0.8), 
@@ -88,25 +86,52 @@ function onScanSuccess(decodedText) {
     }
 }
 
-// Correction XSS : Utilisation de textContent
+// Construction de l'interface avec le bouton d'édition des commentaires
 function updateScanUI(project) {
     document.getElementById('scan-counter').textContent = project.items.length;
     const list = document.getElementById('scanned-items');
     list.innerHTML = '';
     
     let displayItems = project.items.slice(); 
-    if (isSortedAlphabetically) displayItems.sort((a, b) => a.localeCompare(b));
-    else displayItems.reverse(); 
+    if (isSortedAlphabetically) {
+        displayItems.sort((a, b) => a.code.localeCompare(b.code));
+    } else {
+        displayItems.reverse(); 
+    }
     
     displayItems.forEach(item => {
         const li = document.createElement('li');
-        li.textContent = item;
+        li.style.display = 'flex';
+        li.style.justifyContent = 'space-between';
+        li.style.alignItems = 'center';
+        
+        const textSpan = document.createElement('span');
+        textSpan.style.wordBreak = 'break-all';
+        // Affiche une icône et le texte si un commentaire existe
+        textSpan.textContent = item.code + (item.comment ? ` 💬 (${item.comment})` : '');
+        
+        // Création du bouton d'édition
+        const btnEdit = document.createElement('button');
+        btnEdit.className = 'fr-btn fr-btn--tertiary fr-btn--sm fr-icon-edit-line';
+        btnEdit.title = 'Ajouter/Modifier un commentaire';
+        btnEdit.style.marginLeft = '10px';
+        btnEdit.style.flexShrink = '0';
+        
+        // Logique de modification via prompt
+        btnEdit.onclick = () => {
+            const newComment = prompt(`Commentaire pour l'article ${item.code} :`, item.comment || "");
+            if (newComment !== null) {
+                StorageManager.updateComment(currentProjectId, item.code, newComment.trim());
+                updateScanUI(StorageManager.getProject(currentProjectId)); // Rafraîchir l'affichage
+            }
+        };
+        
+        li.appendChild(textSpan);
+        li.appendChild(btnEdit);
         list.appendChild(li);
     });
 }
 
-// Correction XSS : Construction DOM sécurisée
-// Correction XSS et intégration des classes DSFR
 function renderProjectList() {
     const container = document.getElementById('project-list');
     const projects = StorageManager.getProjects();
@@ -118,7 +143,6 @@ function renderProjectList() {
     }
 
     projects.forEach(p => {
-        // Conteneur principal de la carte
         const card = document.createElement('div');
         card.className = 'fr-card fr-mb-2w';
         
@@ -128,17 +152,14 @@ function renderProjectList() {
         const content = document.createElement('div');
         content.className = 'fr-card__content';
         
-        // Titre
         const title = document.createElement('h3');
         title.className = 'fr-card__title';
         title.textContent = p.name;
         
-        // Description
         const desc = document.createElement('p');
         desc.className = 'fr-card__desc';
         desc.textContent = `${p.items.length} article(s) scanné(s)`;
         
-        // Zone des boutons
         const end = document.createElement('div');
         end.className = 'fr-card__end fr-mt-2w';
         end.style.display = 'flex';
@@ -172,18 +193,59 @@ function confirmDelete(id) {
     }
 }
 
+// Fonction de secours si le navigateur ne supporte pas le partage
+function fallbackDownload(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Correction : Échappement CSV
-    document.getElementById('btn-export-csv').addEventListener('click', () => {
+    
+    // --- GESTION DE L'EXPORT ET DU PARTAGE ---
+    document.getElementById('btn-export-csv').addEventListener('click', async () => {
         const p = StorageManager.getProject(currentProjectId);
-        const csvContent = "Code_Inventaire\n" + p.items.join("\n");
+        
+        // 1. Préparation du corps du mail avec les commentaires non vides
+        const commentsText = p.items
+            .filter(i => i.comment && i.comment.trim() !== "")
+            .map(i => `- ${i.code} : ${i.comment}`)
+            .join("\n");
+            
+        const emailBody = commentsText 
+            ? `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nCommentaires relevés lors du scan :\n${commentsText}`
+            : `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nAucun commentaire particulier n'a été saisi lors de ce scan.`;
+
+        // 2. Génération du fichier CSV intégrant la colonne Commentaire
+        const csvContent = "Code_Inventaire,Commentaire\n" + 
+            p.items.map(i => `"${i.code}","${(i.comment || '').replace(/"/g, '""')}"`).join("\n");
         
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Inventaire_${p.name.replace(/ /g, '_')}.csv`;
-        a.click();
+        const fileName = `Inventaire_${p.name.replace(/ /g, '_')}.csv`;
+
+        // 3. Partage via l'API Native (Web Share API)
+        if (navigator.share && navigator.canShare) {
+            const file = new File([blob], fileName, { type: 'text/csv' });
+            try {
+                await navigator.share({
+                    title: `Export Inventaire : ${p.name}`,
+                    text: emailBody,
+                    files: [file]
+                });
+                notify("Partage lancé avec succès !");
+            } catch (err) {
+                if (err.name !== 'AbortError') { 
+                    notify("Le partage a échoué. Téléchargement classique lancé.", true);
+                    fallbackDownload(blob, fileName);
+                }
+            }
+        } else {
+            notify("Votre appareil ne supporte pas le partage direct. Fichier téléchargé.");
+            fallbackDownload(blob, fileName);
+        }
     });
     
     document.getElementById('btn-import-csv').addEventListener('click', () => document.getElementById('input-file-csv').click());
@@ -219,6 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('btn-toggle-sort').addEventListener('click', (e) => {
         isSortedAlphabetically = !isSortedAlphabetically;
+        // Mise à jour du texte du bouton selon l'état
         e.target.textContent = isSortedAlphabetically ? "Trier : Récent" : "Trier : A-Z";
         if (currentProjectId) updateScanUI(StorageManager.getProject(currentProjectId));
     });

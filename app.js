@@ -206,46 +206,37 @@ function fallbackDownload(blob, fileName) {
 document.addEventListener('DOMContentLoaded', () => {
     
     // --- GESTION DE L'EXPORT ET DU PARTAGE ---
-    document.getElementById('btn-export-csv').addEventListener('click', async () => {
+    // --- GESTION DE L'EXPORT (MÉTHODE ROBUSTE) ---
+    document.getElementById('btn-export-csv').addEventListener('click', () => {
         const p = StorageManager.getProject(currentProjectId);
         
-        // 1. Préparation du corps du mail avec les commentaires non vides
+        // 1. Préparation du corps du mail
         const commentsText = p.items
             .filter(i => i.comment && i.comment.trim() !== "")
             .map(i => `- ${i.code} : ${i.comment}`)
             .join("\n");
             
         const emailBody = commentsText 
-            ? `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nCommentaires relevés lors du scan :\n${commentsText}`
-            : `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nAucun commentaire particulier n'a été saisi lors de ce scan.`;
+            ? `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nCommentaires relevés lors du scan :\n${commentsText}\n\n(Pensez à joindre le fichier CSV qui vient d'être téléchargé sur votre appareil)`
+            : `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nAucun commentaire particulier n'a été saisi lors de ce scan.\n\n(Pensez à joindre le fichier CSV qui vient d'être téléchargé sur votre appareil)`;
 
-        // 2. Génération du fichier CSV intégrant la colonne Commentaire
+        // 2. Génération du fichier CSV
         const csvContent = "Code_Inventaire,Commentaire\n" + 
             p.items.map(i => `"${i.code}","${(i.comment || '').replace(/"/g, '""')}"`).join("\n");
         
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const fileName = `Inventaire_${p.name.replace(/ /g, '_')}.csv`;
 
-        // 3. Partage via l'API Native (Web Share API)
-        if (navigator.share && navigator.canShare) {
-            const file = new File([blob], fileName, { type: 'text/csv' });
-            try {
-                await navigator.share({
-                    title: `Export Inventaire : ${p.name}`,
-                    text: emailBody,
-                    files: [file]
-                });
-                notify("Partage lancé avec succès !");
-            } catch (err) {
-                if (err.name !== 'AbortError') { 
-                    notify("Le partage a échoué. Téléchargement classique lancé.", true);
-                    fallbackDownload(blob, fileName);
-                }
-            }
-        } else {
-            notify("Votre appareil ne supporte pas le partage direct. Fichier téléchargé.");
-            fallbackDownload(blob, fileName);
-        }
+        // 3. Téléchargement forcé du fichier (100% fiable)
+        fallbackDownload(blob, fileName);
+        notify("Fichier téléchargé. Ouverture de l'email...");
+
+        // 4. Ouverture de l'application mail après un court délai
+        setTimeout(() => {
+            const subject = encodeURIComponent(`Export Inventaire : ${p.name}`);
+            const body = encodeURIComponent(emailBody);
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        }, 1000); // Laisse 1 seconde au téléchargement pour se lancer
     });
     
     document.getElementById('btn-import-csv').addEventListener('click', () => document.getElementById('input-file-csv').click());

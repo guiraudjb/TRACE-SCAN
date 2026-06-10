@@ -46,15 +46,25 @@ async function startScanner(projectId) {
         scanner = new Html5Qrcode("reader", { 
             formatsToSupport: [
                 Html5QrcodeSupportedFormats.QR_CODE,
-                Html5QrcodeSupportedFormats.CODE_128
-            ] 
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.EAN_13, // Ajout crucial pour les codes-barres standards
+                Html5QrcodeSupportedFormats.CODE_39   // Format très courant en logistique
+            ],
+            // Active l'API native d'Apple (Shape Detection API) si disponible (iOS 17+)
+            // Cela rend le scan instantané et contourne les problèmes de performance web
+            experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true
+            }
         });
     }
     try {
         await scanner.start(
+            // Demande explicitement la caméra arrière
             { facingMode: "environment" },
             { 
                 fps: 10, 
+                // Ajout de disableFlip pour éviter que Safari ne retourne le flux
+                disableFlip: false,
                 qrbox: (viewfinderWidth, viewfinderHeight) => {
                     return { 
                         width: Math.floor(viewfinderWidth * 0.8), 
@@ -64,7 +74,11 @@ async function startScanner(projectId) {
             },
             onScanSuccess
         );
-    } catch (e) { notify("Erreur caméra", true); }
+    } catch (e) { 
+        console.error("Détail de l'erreur caméra :", e);
+        // Afficher l'erreur exacte permet de savoir si c'est un problème de HTTPS ou de permission
+        notify("Erreur caméra : " + (e.name || "Non autorisée"), true); 
+    }
 }
 
 async function stopScanner() {

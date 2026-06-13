@@ -87,6 +87,9 @@ async function startScanner(projectId) {
     updateToggleModeBtn();
     document.getElementById('manual-input-zone').style.display = 'none';
     document.getElementById('manual-code-input').value = '';
+    document.getElementById('btn-manual-toggle').textContent = 'Manuel';
+    document.getElementById('camera-zone').style.display = 'block';
+    document.getElementById('btn-toggle-camera').textContent = '▼ Vue liste seule';
     toggleWakeLock(true);
 
     if (!scanner) {
@@ -247,10 +250,11 @@ async function shareOrDownload(blob, fileName) {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
             await navigator.share({ files: [file] });
+            return true;
         } catch (e) {
-            if (e.name !== 'AbortError') notify("Partage impossible", true);
+            if (e.name === 'AbortError') return true;
+            // Partage échoué (MIME non supporté, pas d'app, etc.) → téléchargement
         }
-        return true;
     }
     fallbackDownload(blob, fileName);
     return false;
@@ -350,7 +354,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const zone = document.getElementById('manual-input-zone');
         const open = zone.style.display === 'none';
         zone.style.display = open ? 'block' : 'none';
+        document.getElementById('btn-manual-toggle').textContent = open ? 'Manuel ✕' : 'Manuel';
         if (open) document.getElementById('manual-code-input').focus();
+    });
+
+    document.getElementById('btn-toggle-camera').addEventListener('click', () => {
+        const cameraZone = document.getElementById('camera-zone');
+        const btn = document.getElementById('btn-toggle-camera');
+        const isHidden = cameraZone.style.display === 'none';
+        cameraZone.style.display = isHidden ? 'block' : 'none';
+        btn.textContent = isHidden ? '▼ Vue liste seule' : '▲ Reprendre le scan';
     });
 
     function submitManualCode() {

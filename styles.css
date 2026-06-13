@@ -3,28 +3,55 @@
 .hidden { display: none !important; }
 
 /* Zone Scan spécifique */
-/* --- Dans styles.css, modifiez la règle #reader --- */
-#reader { 
-    width: 100%; 
-    background: #000; 
-    overflow: hidden; 
-    flex-shrink: 0; /* CRITIQUE : Empêche la liste de réduire la taille de la caméra */
-    min-height: 300px; /* Assure une zone minimale stable */
+#camera-zone {
+    flex-shrink: 0;
 }
 
-/* Assurez-vous aussi que la liste ne dépasse pas sa zone */
-#scanned-items { 
+#reader {
+    width: 100%;
+    background: #000;
+    overflow: hidden;
+}
+
+/* Bouton séparateur caméra / liste */
+#btn-toggle-camera {
+    width: 100%;
+    padding: 6px 1rem;
+    background: var(--background-alt-grey);
+    border: none;
+    border-top: 1px solid var(--border-default-grey);
+    border-bottom: 1px solid var(--border-default-grey);
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--text-action-high-blue-france);
+    text-align: center;
+    flex-shrink: 0;
+    font-weight: 600;
+}
+#btn-toggle-camera:active {
+    background: var(--background-contrast-grey);
+}
+
+/* Zone liste */
+#list-zone {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+#scanned-items {
     flex-grow: 1;
     overflow-y: auto;
-    /* On s'assure que le scroll reste interne à la liste */
+    padding: 0 1rem;
+    margin: 0;
 }
-/* Liste des scans défilante */
 
-#scanned-items li { 
-    padding: 1rem 0.5rem; 
-    border-bottom: 1px solid var(--border-default-grey); 
-    font-family: monospace; 
-    font-size: 1.1rem;
+#scanned-items li {
+    padding: 0.9rem 0.25rem;
+    border-bottom: 1px solid var(--border-default-grey);
+    font-family: monospace;
+    font-size: 1rem;
 }
 
 /* Notification Toast (Adaptée aux couleurs DSFR) */

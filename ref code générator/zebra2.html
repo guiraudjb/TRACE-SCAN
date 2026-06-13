@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="fr" data-fr-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>mobiTrace - Impression ZPL Multi-Formats Sécurisée</title>
+    
+    <link rel="stylesheet" href="../dsfr-v1.14.3/dist/dsfr.min.css">
+    
+    <script src="./bwip-js-min.js"></script>
+    <script src="./jspdf.umd.min.js"></script>
+
+    <style>
+        .preview-zone { 
+            background-color: #eaeded; 
+            padding: 2rem; 
+            text-align: center; 
+            min-height: 250px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            border: 2px dashed #929292;
+            border-radius: 4px;
+        }
+        .label-simulation {
+            width: 300px;
+            height: 147px;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        #canvasPreview { 
+            width: 100%; 
+            height: 100%;
+        }
+        .settings-panel {
+            background-color: #f6f6f6;
+            padding: 1.5rem;
+            border-left: 4px solid #000091;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="fr-container fr-mt-4w fr-mb-8w">
+        <h1 class="fr-h4">Génération d'étiquettes mobiTrace — Multi-formats</h1>
+        
+        <div class="fr-grid-row fr-grid-row--gutters">
+            
+            <div class="fr-col-md-6">
+                
+                <div class="fr-select-group">
+                    <label class="fr-label" for="typeSelect">Mise en page & Symbologie</label>
+                    <select id="typeSelect" class="fr-select">
+                        <optgroup label="Formats 2D (Haute densité)">
+                            <option value="qrcode">QR Code</option>
+                            <option value="datamatrix">DataMatrix (Ultra-compact)</option>
+                        </optgroup>
+                        <optgroup label="Formats 1D (Linéaires)">
+                            <option value="code128">Code 128 (Standard Zebra)</option>
+                            <option value="code39">Code 39 (Standard Administration)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="fr-input-group fr-mt-2w">
+                    <label class="fr-label" for="adminHeader">En-tête Administration</label>
+                    <input type="text" id="adminHeader" class="fr-input" value="DGFiP">
+                </div>
+
+                <div class="fr-form-group fr-mt-4w">
+                    <fieldset class="fr-fieldset">
+                        <legend class="fr-fieldset__legend fr-text--regular fr-text--bold">Source des identifiants</legend>
+                        <div class="fr-fieldset__element fr-fieldset__element--inline">
+                            <div class="fr-radio-group">
+                                <input type="radio" id="modeManual" name="importMode" value="manual" checked>
+                                <label class="fr-label" for="modeManual">Saisie manuelle (Série)</label>
+                            </div>
+                        </div>
+                        <div class="fr-fieldset__element fr-fieldset__element--inline">
+                            <div class="fr-radio-group">
+                                <input type="radio" id="modeFile" name="importMode" value="file">
+                                <label class="fr-label" for="modeFile">Importer un fichier</label>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <div id="manualBlock">
+                    <div class="fr-input-group fr-mt-2w">
+                        <label class="fr-label" for="barcodeData">Identifiant de départ</label>
+                        <span class="fr-hint-text">Incrémentation automatique pour les lots.</span>
+                        <input type="text" id="barcodeData" class="fr-input" value="MOB-000001">
+                    </div>
+                    <div class="fr-input-group fr-mt-2w">
+                        <label class="fr-label" for="batchQty">Nombre d'étiquettes (Lot)</label>
+                        <input type="number" id="batchQty" class="fr-input" value="1" min="1" max="1000">
+                    </div>
+                </div>
+
+                <div id="fileBlock" style="display: none;">
+                    <div class="fr-upload-group fr-mt-2w">
+                        <label class="fr-label" for="fileUpload">Fichier .txt ou .csv</label>
+                        <span class="fr-hint-text">Le fichier doit contenir un identifiant par ligne.</span>
+                        <input class="fr-upload" type="file" id="fileUpload" accept=".txt,.csv">
+                    </div>
+                </div>
+
+                <div class="settings-panel">
+                    <h4 class="fr-h6 fr-mb-1w">Paramètres matériels (Zebra)</h4>
+                    <div class="fr-grid-row fr-grid-row--gutters">
+                        <div class="fr-col-6">
+                            <div class="fr-input-group">
+                                <label class="fr-label" for="printDarkness">
+                                    Température
+                                    <span class="fr-hint-text">Darkness (0 à 30)</span>
+                                </label>
+                                <input type="number" id="printDarkness" class="fr-input" value="15" min="0" max="30">
+                            </div>
+                        </div>
+                        <div class="fr-col-6">
+                            <div class="fr-select-group">
+                                <label class="fr-label" for="printSpeed">
+                                    Vitesse
+                                    <span class="fr-hint-text">Inches per second</span>
+                                </label>
+                                <select id="printSpeed" class="fr-select">
+                                    <option value="2">2 ips (Qualité max)</option>
+                                    <option value="4" selected>4 ips (Standard)</option>
+                                    <option value="6">6 ips (Rapide)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fr-mt-4w">
+                    <button id="btnGenerate" class="fr-btn fr-icon-printer-fill fr-btn--icon-left">
+                        Imprimer sur la Zebra
+                    </button>
+                    <button id="btnPdf" class="fr-btn fr-btn--secondary fr-icon-download-fill fr-btn--icon-left fr-ml-2w">
+                        Générer PDF
+                    </button>
+                </div>
+            </div>
+
+            <div class="fr-col-md-6">
+                <div class="preview-zone">
+                    <p class="fr-text--sm fr-mb-1w"><strong>Aperçu fidèle (51x25 mm)</strong></p>
+                    <div class="label-simulation">
+                        <canvas id="canvasPreview" width="408" height="200"></canvas>
+                    </div>
+                    <p id="batchInfo" class="fr-text--sm fr-mt-2w fr-badge fr-badge--info">1 étiquette calculée</p>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        const LABEL_W = 408; // 51mm × 8 dots/mm (203 dpi)
+        const LABEL_H = 200; // 25mm × 8 dots/mm
+
+        const canvas = document.getElementById('canvasPreview');
+        const typeSelect = document.getElementById('typeSelect');
+        const adminHeader = document.getElementById('adminHeader');
+        const batchInfo = document.getElementById('batchInfo');
+        
+        // Eléments Saisie / Fichier
+        const barcodeData = document.getElementById('barcodeData');
+        const batchQty = document.getElementById('batchQty');
+        const fileUpload = document.getElementById('fileUpload');
+        let fileItemsArray = []; 
+
+        // Paramètres matériels ZPL
+        const printDarkness = document.getElementById('printDarkness');
+        const printSpeed = document.getElementById('printSpeed');
+
+        // Gestion de l'affichage Manuel / Fichier
+        document.querySelectorAll('input[name="importMode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'manual') {
+                    document.getElementById('manualBlock').style.display = 'block';
+                    document.getElementById('fileBlock').style.display = 'none';
+                } else {
+                    document.getElementById('manualBlock').style.display = 'none';
+                    document.getElementById('fileBlock').style.display = 'block';
+                }
+                updatePreview();
+            });
+        });
+
+        // Lecture du fichier texte
+        fileUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) {
+                fileItemsArray = [];
+                updatePreview();
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const text = event.target.result;
+                const allLines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+                fileItemsArray = [...new Set(allLines
+                    .map(id => id.toUpperCase())
+                    .filter(id => /^MOB-\d{6}$/.test(id)))];
+                if (fileItemsArray.length === 0) {
+                    alert("Aucun identifiant au format MOB-XXXXXX n'a été trouvé dans ce fichier.");
+                } else if (fileItemsArray.length < allLines.length) {
+                    alert(`${allLines.length - fileItemsArray.length} ligne(s) ignorée(s) : format attendu MOB-XXXXXX.`);
+                }
+                updatePreview();
+            };
+            reader.readAsText(file);
+        });
+
+        // Calcul de la liste d'identifiants
+        function getItemsToProcess() {
+            const mode = document.querySelector('input[name="importMode"]:checked').value;
+            if (mode === 'manual') {
+                let items = [];
+                const startValue = barcodeData.value;
+                const quantity = parseInt(batchQty.value, 10) || 1;
+                
+                if (!startValue) return items;
+
+                const match = startValue.match(/^(.*?)(\d+)$/);
+                if (match && quantity > 1) {
+                    const prefix = match[1];
+                    const numStr = match[2];
+                    const numLen = numStr.length;
+                    let currentNum = parseInt(numStr, 10);
+                    
+                    for (let i = 0; i < quantity; i++) {
+                        items.push(prefix + String(currentNum).padStart(numLen, '0'));
+                        currentNum++;
+                    }
+                } else {
+                    for (let i = 0; i < quantity; i++) items.push(startValue);
+                }
+                return items;
+            } else {
+                return fileItemsArray;
+            }
+        }
+
+        // Moteur de composition graphique (WYSIWYG) gérant 1D et 2D
+        function renderLabelToCanvas(targetCanvas, type, data, adminText) {
+            const ctx = targetCanvas.getContext('2d');
+            targetCanvas.width = LABEL_W;
+            targetCanvas.height = LABEL_H;
+            
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+            ctx.fillStyle = "black";
+
+            if (!data) data = "MOBI-TRACE";
+
+            const is2D = (type === 'qrcode' || type === 'datamatrix');
+
+            if (is2D) {
+                ctx.font = "bold 28px sans-serif";
+                ctx.fillText(adminText, 160, 65); 
+                ctx.font = "34px sans-serif";
+                ctx.fillText(data, 160, 125); 
+
+                try {
+                    let tempCanvas = document.createElement('canvas');
+                    bwipjs.toCanvas(tempCanvas, { 
+                        bcid: type, 
+                        text: data, 
+                        scale: type === 'qrcode' ? 4 : 5 
+                    });
+                    
+                    const imgSize = type === 'datamatrix' ? 100 : 120;
+                    const yPos = (200 - imgSize) / 2;
+                    ctx.drawImage(tempCanvas, 20, yPos, imgSize, imgSize); 
+                } catch (e) { console.error(e); }
+            } else {
+                try {
+                    let tempCanvas = document.createElement('canvas');
+                    bwipjs.toCanvas(tempCanvas, {
+                        bcid: type, 
+                        text: data, 
+                        scale: 3, 
+                        height: 12, 
+                        includetext: true, 
+                        textxalign: 'center'
+                    });
+                    ctx.drawImage(tempCanvas, 40, 50, 328, 100);
+                } catch (e) { console.error(e); }
+            }
+        }
+
+        // Mise à jour de l'interface
+        function updatePreview() {
+            const type = typeSelect.value;
+            const adminText = adminHeader.value || "";
+            const items = getItemsToProcess();
+            const mode = document.querySelector('input[name="importMode"]:checked').value;
+            
+            const firstItem = items.length > 0 ? items[0] : "MOBI-TRACE";
+            renderLabelToCanvas(canvas, type, firstItem, adminText);
+
+            if (items.length === 0) {
+                batchInfo.className = "fr-text--sm fr-mt-2w fr-badge fr-badge--warning";
+                batchInfo.textContent = mode === 'file' ? "Aucun fichier chargé ou fichier vide." : "Valeur de départ vide.";
+            } else if (items.length > 1) {
+                batchInfo.className = "fr-text--sm fr-mt-2w fr-badge fr-badge--info";
+                if (mode === 'manual') {
+                    batchInfo.textContent = `Série manuelle de ${items.length} étiquettes : de ${items[0]} à ${items[items.length - 1]}`;
+                } else {
+                    batchInfo.textContent = `Fichier chargé : ${items.length} étiquettes prêtes à imprimer.`;
+                }
+            } else {
+                batchInfo.className = "fr-text--sm fr-mt-2w fr-badge fr-badge--info";
+                batchInfo.textContent = `1 étiquette prête.`;
+            }
+        }
+
+        /**
+         * Génération du code ZPL enrichi avec la sécurité du token
+         */
+        document.getElementById('btnGenerate').addEventListener('click', async () => {
+            const type = typeSelect.value;
+            const adminText = adminHeader.value;
+            const items = getItemsToProcess();
+            
+            const darkness = parseInt(printDarkness.value, 10) || 15;
+            const speed = parseInt(printSpeed.value, 10) || 4;
+            
+            if (items.length === 0) return alert("Aucune donnée à imprimer.");
+            
+            // Verrouillage du bouton pendant l'envoi
+            const btn = document.getElementById('btnGenerate');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = 'Envoi en cours...';
+            
+            let zpl = "";
+            items.forEach(item => {
+                zpl += "^XA\n";
+                zpl += `~SD${darkness}\n`;
+                zpl += `^PR${speed}\n`;
+                zpl += `^PW${LABEL_W}\n^LL${LABEL_H}\n^LH0,0\n`;
+
+                switch (type) {
+                    case 'qrcode':
+                        // ^FDQA : Q = correction 25% (Quartile), A = encodage automatique
+                        zpl += `^FO20,25^BQN,2,4^FDQA,${item}^FS\n`;
+                        zpl += `^FO160,40^A0N,28,28^FD${adminText}^FS\n`;
+                        zpl += `^FO160,100^A0N,34,34^FD${item}^FS\n`;
+                        break;
+                    case 'datamatrix':
+                        zpl += `^FO20,30^BXN,5,200^FD${item}^FS\n`;
+                        zpl += `^FO160,40^A0N,28,28^FD${adminText}^FS\n`;
+                        zpl += `^FO160,100^A0N,34,34^FD${item}^FS\n`;
+                        break;
+                    case 'code39': {
+                        // narrow=1 : MOB-XXXXXX ≈ 191 dots — centrage correct sur 408 dots
+                        const x39 = Math.max(10, Math.floor((LABEL_W - 191) / 2));
+                        zpl += `^BY1,3.0,70\n`;
+                        zpl += `^FO${x39},50^B3N,N,70,Y,N^FD${item}^FS\n`;
+                        break;
+                    }
+                    case 'code128': {
+                        // narrow=2 : MOB-XXXXXX ≈ 290 dots — centrage correct sur 408 dots
+                        const x128 = Math.max(10, Math.floor((LABEL_W - 290) / 2));
+                        zpl += `^BY2,3.0,70\n`;
+                        zpl += `^FO${x128},50^BCN,70,Y,N,N^FD${item}^FS\n`;
+                        break;
+                    }
+                }
+                
+                zpl += "^XZ\n";
+            });
+
+            try {
+                const response = await fetch('/imprimer-zpl', {
+                    method: 'POST',
+                    credentials: 'same-origin', // SÉCURITÉ : Transmission du token
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: zpl
+                });
+                
+                if (response.status === 401) {
+                    throw new Error("Session expirée. Veuillez vous reconnecter au portail.");
+                }
+
+                if (response.ok) {
+                    alert(`Succès : Lot de ${items.length} étiquettes envoyé à l'imprimante.`);
+                } else {
+                    throw new Error(response.statusText);
+                }
+            } catch (error) {
+                alert("Erreur réseau ou d'impression : " + error.message);
+            } finally {
+                // Déverrouillage du bouton
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        // Export PDF
+        document.getElementById('btnPdf').addEventListener('click', () => {
+            const type = typeSelect.value;
+            const adminText = adminHeader.value || "";
+            const items = getItemsToProcess();
+            
+            if (items.length === 0) return alert("Aucune donnée à exporter.");
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: [51, 25] });
+            let tempCanvas = document.createElement('canvas');
+
+            for (let i = 0; i < items.length; i++) {
+                if (i > 0) doc.addPage();
+                renderLabelToCanvas(tempCanvas, type, items[i], adminText);
+                const imgData = tempCanvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', 0, 0, 51, 25);
+            }
+            doc.save(`lot_${items.length}_etiquettes.pdf`);
+        });
+
+        // Ecouteurs globaux
+        barcodeData.addEventListener('input', updatePreview);
+        adminHeader.addEventListener('input', updatePreview);
+        batchQty.addEventListener('input', updatePreview);
+        typeSelect.addEventListener('change', updatePreview);
+        
+        window.addEventListener('DOMContentLoaded', updatePreview);
+    </script>
+</body>
+</html>

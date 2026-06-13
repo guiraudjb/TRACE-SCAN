@@ -2,7 +2,8 @@ const TRACE_DB_KEY = 'trace_scan_projects_v1';
 
 const StorageManager = {
     getProjects() {
-        const data = localStorage.getItem(TRACE_DB_KEY);
+        let data;
+        try { data = localStorage.getItem(TRACE_DB_KEY); } catch (e) { return []; }
         let projects = data ? JSON.parse(data) : [];
         
         // Migration automatique des anciens scans vers le nouveau format objet
@@ -17,7 +18,11 @@ const StorageManager = {
     },
 
     saveAll(projects) {
-        localStorage.setItem(TRACE_DB_KEY, JSON.stringify(projects));
+        try {
+            localStorage.setItem(TRACE_DB_KEY, JSON.stringify(projects));
+        } catch (e) {
+            console.error('Stockage indisponible (navigation privée ?)', e);
+        }
     },
 
     createProject(customName = "") {

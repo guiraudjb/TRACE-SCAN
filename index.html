@@ -2,7 +2,10 @@
 <html lang="fr" data-fr-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TRACE_SCAN">
     <title>TRACE_SCAN - Inventaire Nomade</title>
     <link rel="manifest" href="manifest.json">
     
@@ -73,6 +76,7 @@
                         <div class="fr-header__tools">
                             <ul class="fr-btns-group">
                                 <li><button class="fr-btn fr-btn--secondary fr-btn--sm fr-icon-arrow-left-line" id="btn-back" title="Retour">Retour</button></li>
+                                <li><button class="fr-btn fr-btn--tertiary fr-btn--sm" id="btn-toggle-mode" title="Changer le type de code scanné">2D</button></li>
                                 <li><button class="fr-btn fr-btn--sm fr-icon-download-line" id="btn-export-csv" title="Exporter CSV">Export</button></li>
                             </ul>
                         </div>

@@ -2,6 +2,7 @@ let currentProjectId = null;
 let scanner = null;
 let wakeLock = null;
 let isSortedAlphabetically = false;
+let scanMode = '2d';
 
 // --- NAVIGATION ---
 function showView(viewId) {
@@ -32,6 +33,49 @@ async function toggleWakeLock(active) {
     } catch (err) { console.error("WakeLock Error:", err); }
 }
 
+// --- HELPERS MODE SCAN ---
+function getScanFormats() {
+    if (scanMode === '2d') {
+        return [Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX];
+    }
+    return [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39];
+}
+
+function getQrbox(w, h) {
+    if (scanMode === '2d') {
+        const side = Math.floor(Math.min(w, h) * 0.7);
+        return { width: side, height: side };
+    }
+    return { width: Math.floor(w * 0.85), height: Math.floor(h * 0.25) };
+}
+
+function updateToggleModeBtn() {
+    const btn = document.getElementById('btn-toggle-mode');
+    if (!btn) return;
+    btn.textContent = scanMode === '2d' ? '2D' : '1D';
+}
+
+async function toggleScanMode() {
+    if (scanner && scanner.isScanning) await scanner.stop();
+    scanner = null;
+    scanMode = scanMode === '2d' ? '1d' : '2d';
+    updateToggleModeBtn();
+    scanner = new Html5Qrcode("reader", {
+        formatsToSupport: getScanFormats(),
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+    });
+    try {
+        await scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, disableFlip: false, qrbox: getQrbox },
+            onScanSuccess
+        );
+    } catch (e) {
+        console.error("Détail de l'erreur caméra :", e);
+        notify("Erreur caméra : " + (e.name || "Non autorisée"), true);
+    }
+}
+
 // --- LOGIQUE SCANNER ---
 async function startScanner(projectId) {
     currentProjectId = projectId;
@@ -40,44 +84,24 @@ async function startScanner(projectId) {
     updateScanUI(project);
 
     showView('view-scan');
+    updateToggleModeBtn();
     toggleWakeLock(true);
 
     if (!scanner) {
-        scanner = new Html5Qrcode("reader", { 
-            formatsToSupport: [
-                Html5QrcodeSupportedFormats.QR_CODE,
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.EAN_13, // Ajout crucial pour les codes-barres standards
-                Html5QrcodeSupportedFormats.CODE_39   // Format très courant en logistique
-            ],
-            // Active l'API native d'Apple (Shape Detection API) si disponible (iOS 17+)
-            // Cela rend le scan instantané et contourne les problèmes de performance web
-            experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true
-            }
+        scanner = new Html5Qrcode("reader", {
+            formatsToSupport: getScanFormats(),
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
         });
     }
     try {
         await scanner.start(
-            // Demande explicitement la caméra arrière
             { facingMode: "environment" },
-            { 
-                fps: 10, 
-                // Ajout de disableFlip pour éviter que Safari ne retourne le flux
-                disableFlip: false,
-                qrbox: (viewfinderWidth, viewfinderHeight) => {
-                    return { 
-                        width: Math.floor(viewfinderWidth * 0.8), 
-                        height: Math.floor(viewfinderHeight * 0.3) 
-                    };
-                } 
-            },
+            { fps: 10, disableFlip: false, qrbox: getQrbox },
             onScanSuccess
         );
-    } catch (e) { 
+    } catch (e) {
         console.error("Détail de l'erreur caméra :", e);
-        // Afficher l'erreur exacte permet de savoir si c'est un problème de HTTPS ou de permission
-        notify("Erreur caméra : " + (e.name || "Non autorisée"), true); 
+        notify("Erreur caméra : " + (e.name || "Non autorisée"), true);
     }
 }
 
@@ -207,7 +231,6 @@ function confirmDelete(id) {
     }
 }
 
-// Fonction de secours si le navigateur ne supporte pas le partage
 function fallbackDownload(blob, fileName) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -217,40 +240,51 @@ function fallbackDownload(blob, fileName) {
     URL.revokeObjectURL(url);
 }
 
+async function shareOrDownload(blob, fileName) {
+    const file = new File([blob], fileName, { type: blob.type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({ files: [file] });
+        } catch (e) {
+            if (e.name !== 'AbortError') notify("Partage impossible", true);
+        }
+        return true;
+    }
+    fallbackDownload(blob, fileName);
+    return false;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     
     // --- GESTION DE L'EXPORT ET DU PARTAGE ---
     // --- GESTION DE L'EXPORT (MÉTHODE ROBUSTE) ---
-    document.getElementById('btn-export-csv').addEventListener('click', () => {
+    document.getElementById('btn-export-csv').addEventListener('click', async () => {
         const p = StorageManager.getProject(currentProjectId);
-        
-        // 1. Préparation du corps du mail
+
         const commentsText = p.items
             .filter(i => i.comment && i.comment.trim() !== "")
             .map(i => `- ${i.code} : ${i.comment}`)
             .join("\n");
-            
-        const emailBody = commentsText 
-            ? `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nCommentaires relevés lors du scan :\n${commentsText}\n\n(Pensez à joindre le fichier CSV qui vient d'être téléchargé sur votre appareil)`
-            : `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nAucun commentaire particulier n'a été saisi lors de ce scan.\n\n(Pensez à joindre le fichier CSV qui vient d'être téléchargé sur votre appareil)`;
 
-        // 2. Génération du fichier CSV
-        const csvContent = "Code_Inventaire,Commentaire\n" + 
+        const emailBody = commentsText
+            ? `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nCommentaires relevés lors du scan :\n${commentsText}\n\n(Pensez à joindre le fichier CSV)`
+            : `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nAucun commentaire particulier n'a été saisi lors de ce scan.\n\n(Pensez à joindre le fichier CSV)`;
+
+        const csvContent = "Code_Inventaire,Commentaire\n" +
             p.items.map(i => `"${i.code}","${(i.comment || '').replace(/"/g, '""')}"`).join("\n");
-        
+
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const fileName = `Inventaire_${p.name.replace(/ /g, '_')}.csv`;
 
-        // 3. Téléchargement forcé du fichier (100% fiable)
-        fallbackDownload(blob, fileName);
-        notify("Fichier téléchargé. Ouverture de l'email...");
-
-        // 4. Ouverture de l'application mail après un court délai
-        setTimeout(() => {
-            const subject = encodeURIComponent(`Export Inventaire : ${p.name}`);
-            const body = encodeURIComponent(emailBody);
-            window.location.href = `mailto:?subject=${subject}&body=${body}`;
-        }, 1000); // Laisse 1 seconde au téléchargement pour se lancer
+        const shared = await shareOrDownload(blob, fileName);
+        if (!shared) {
+            notify("Fichier téléchargé. Ouverture de l'email...");
+            setTimeout(() => {
+                const subject = encodeURIComponent(`Export Inventaire : ${p.name}`);
+                const body = encodeURIComponent(emailBody);
+                window.location.href = `mailto:?subject=${subject}&body=${body}`;
+            }, 1000);
+        }
     });
     
     document.getElementById('btn-import-csv').addEventListener('click', () => document.getElementById('input-file-csv').click());
@@ -273,13 +307,11 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsText(file);
     });
 
-    document.getElementById('btn-export-db').addEventListener('click', () => {
+    document.getElementById('btn-export-db').addEventListener('click', async () => {
         const data = StorageManager.getBackupData();
+        const fileName = `TRACE_SCAN_Backup_${new Date().toISOString().split('T')[0]}.json`;
         const blob = new Blob([data], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `TRACE_SCAN_Backup_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
+        await shareOrDownload(blob, fileName);
     });
 
     document.getElementById('btn-import-db').addEventListener('click', () => document.getElementById('input-file-import').click());
@@ -310,10 +342,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-back').addEventListener('click', () => showView('view-home'));
+    document.getElementById('btn-toggle-mode').addEventListener('click', toggleScanMode);
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && currentProjectId) toggleWakeLock(true);
     });
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js');
+    }
 
     renderProjectList();
 });

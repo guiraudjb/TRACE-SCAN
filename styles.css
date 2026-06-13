@@ -1,5 +1,5 @@
 /* Vues et utilitaires */
-.view { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.view { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
 .hidden { display: none !important; }
 
 /* Zone Scan spécifique */
@@ -29,7 +29,7 @@
 
 /* Notification Toast (Adaptée aux couleurs DSFR) */
 #toast {
-    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    position: fixed; bottom: calc(2rem + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
     background: var(--background-contrast-info); 
     color: var(--text-default-info); 
     padding: 0.8rem 1.5rem;

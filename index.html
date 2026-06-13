@@ -87,10 +87,19 @@
 
         <main style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; padding: 0;">
             <div id="reader"></div>
+            <div id="manual-input-zone" style="display:none; padding: 0.5rem 1rem; background: var(--background-alt-grey); border-bottom: 1px solid var(--border-default-grey);">
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="text" id="manual-code-input" class="fr-input" placeholder="Saisir l'identifiant manuellement...">
+                    <button class="fr-btn fr-btn--sm" id="btn-manual-submit">Valider</button>
+                </div>
+            </div>
             <div class="fr-container fr-mt-2w" style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <strong>Scans : <span id="scan-counter" style="color: var(--text-action-high-blue-france);">0</span></strong>
-                    <button class="fr-btn fr-btn--tertiary fr-btn--sm" id="btn-toggle-sort">Trier : A-Z</button>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="fr-btn fr-btn--tertiary fr-btn--sm" id="btn-manual-toggle" title="Saisie manuelle si code dégradé">Manuel</button>
+                        <button class="fr-btn fr-btn--tertiary fr-btn--sm" id="btn-toggle-sort">Trier : A-Z</button>
+                    </div>
                 </div>
                 <ul id="scanned-items"></ul>
             </div>

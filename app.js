@@ -85,6 +85,8 @@ async function startScanner(projectId) {
 
     showView('view-scan');
     updateToggleModeBtn();
+    document.getElementById('manual-input-zone').style.display = 'none';
+    document.getElementById('manual-code-input').value = '';
     toggleWakeLock(true);
 
     if (!scanner) {
@@ -343,6 +345,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-back').addEventListener('click', () => showView('view-home'));
     document.getElementById('btn-toggle-mode').addEventListener('click', toggleScanMode);
+
+    document.getElementById('btn-manual-toggle').addEventListener('click', () => {
+        const zone = document.getElementById('manual-input-zone');
+        const open = zone.style.display === 'none';
+        zone.style.display = open ? 'block' : 'none';
+        if (open) document.getElementById('manual-code-input').focus();
+    });
+
+    function submitManualCode() {
+        const input = document.getElementById('manual-code-input');
+        const code = input.value.trim();
+        if (!code) return;
+        onScanSuccess(code);
+        input.value = '';
+        input.focus();
+    }
+
+    document.getElementById('btn-manual-submit').addEventListener('click', submitManualCode);
+    document.getElementById('manual-code-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitManualCode();
+    });
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && currentProjectId) toggleWakeLock(true);

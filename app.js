@@ -273,14 +273,14 @@ document.addEventListener('DOMContentLoaded', () => {
             .join("\n");
 
         const emailBody = commentsText
-            ? `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nCommentaires relevés lors du scan :\n${commentsText}\n\n(Pensez à joindre le fichier CSV)`
-            : `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nAucun commentaire particulier n'a été saisi lors de ce scan.\n\n(Pensez à joindre le fichier CSV)`;
+            ? `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nCommentaires relevés lors du scan :\n${commentsText}\n\n(Pensez à joindre le fichier)`
+            : `Bonjour,\n\nVeuillez trouver ci-joint l'inventaire "${p.name}".\n\nAucun commentaire particulier n'a été saisi lors de ce scan.\n\n(Pensez à joindre le fichier)`;
 
         const csvContent = "Code_Inventaire,Commentaire\n" +
             p.items.map(i => `"${i.code}","${(i.comment || '').replace(/"/g, '""')}"`).join("\n");
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const fileName = `Inventaire_${p.name.replace(/ /g, '_')}.csv`;
+        const blob = new Blob([csvContent], { type: 'text/plain;charset=utf-8;' });
+        const fileName = `Inventaire_${p.name.replace(/ /g, '_')}.txt`;
 
         const shared = await shareOrDownload(blob, fileName);
         if (!shared) {

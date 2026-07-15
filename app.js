@@ -6,11 +6,11 @@ let scanMode = '2d';
 let torchEnabled = false;
 
 // --- NAVIGATION ---
-function showView(viewId) {
+async function showView(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
     document.getElementById(viewId).classList.remove('hidden');
     if (viewId === 'view-home') {
-        stopScanner();
+        await stopScanner();
         renderProjectList();
     }
 }
@@ -60,6 +60,20 @@ function getCameraConstraints() {
     return { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } };
 }
 
+async function startCamera(scannerInstance, onSuccess) {
+    const config = { fps: 15, disableFlip: false, qrbox: getQrbox };
+    try {
+        await scannerInstance.start(getCameraConstraints(), config, onSuccess);
+    } catch (firstError) {
+        if (firstError.name === 'NotAllowedError' || firstError.name === 'PermissionDeniedError') {
+            throw firstError;
+        }
+        // Contrainte de résolution non satisfaite sur cet appareil → repli sans HD
+        console.warn("Caméra HD échouée, repli basique :", firstError);
+        await scannerInstance.start({ facingMode: "environment" }, config, onSuccess);
+    }
+}
+
 function checkTorchSupport() {
     const btn = document.getElementById('btn-torch');
     try {
@@ -100,15 +114,15 @@ async function toggleScanMode() {
         experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     });
     try {
-        await scanner.start(
-            getCameraConstraints(),
-            { fps: 15, disableFlip: false, qrbox: getQrbox },
-            onScanSuccess
-        );
+        await startCamera(scanner, onScanSuccess);
         checkTorchSupport();
     } catch (e) {
         console.error("Détail de l'erreur caméra :", e);
-        notify("Erreur caméra : " + (e.name || "Non autorisée"), true);
+        if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+            notify("Permission caméra refusée. Vérifiez les réglages du navigateur.", true, 6000);
+        } else {
+            notify("Erreur caméra : " + (e.name || e.message || "inconnue"), true);
+        }
     }
 }
 
@@ -135,15 +149,15 @@ async function startScanner(projectId) {
         });
     }
     try {
-        await scanner.start(
-            getCameraConstraints(),
-            { fps: 15, disableFlip: false, qrbox: getQrbox },
-            onScanSuccess
-        );
+        await startCamera(scanner, onScanSuccess);
         checkTorchSupport();
     } catch (e) {
         console.error("Détail de l'erreur caméra :", e);
-        notify("Erreur caméra : " + (e.name || "Non autorisée"), true);
+        if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+            notify("Permission caméra refusée. Vérifiez les réglages du navigateur.", true, 6000);
+        } else {
+            notify("Erreur caméra : " + (e.name || e.message || "inconnue"), true);
+        }
     }
 }
 

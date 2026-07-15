@@ -95,14 +95,24 @@ function resetTorch() {
 
 async function toggleScanMode() {
     if (scanner && scanner.isScanning) await scanner.stop();
-    resetTorch();
     scanner = null;
+    resetTorch();
     scanMode = scanMode === '2d' ? '1d' : '2d';
     updateToggleModeBtn();
-    scanner = new Html5Qrcode("reader", {
+    await launchScanner();
+}
+
+function buildScanner() {
+    // BarcodeDetector natif activé uniquement en mode 1D (codes-barres) où il est fiable.
+    // En mode 2D, ZXing est utilisé pour garantir la lecture des DataMatrix.
+    return new Html5Qrcode("reader", {
         formatsToSupport: getScanFormats(),
-        experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+        experimentalFeatures: { useBarCodeDetectorIfSupported: scanMode === '1d' }
     });
+}
+
+async function launchScanner() {
+    scanner = buildScanner();
     try {
         await startCamera(scanner, onScanSuccess);
         checkTorchSupport();
@@ -133,30 +143,19 @@ async function startScanner(projectId) {
     document.getElementById('btn-toggle-camera').textContent = '▼ Vue liste seule';
     toggleWakeLock(true);
 
-    if (!scanner) {
-        scanner = new Html5Qrcode("reader", {
-            formatsToSupport: getScanFormats(),
-            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-        });
-    }
-    try {
-        await startCamera(scanner, onScanSuccess);
-        checkTorchSupport();
-    } catch (e) {
-        console.error("Détail de l'erreur caméra :", e);
-        const errMsg = typeof e === 'string' ? e : (e.name || e.message || JSON.stringify(e) || 'inconnue');
-        if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
-            notify("Permission caméra refusée. Vérifiez les réglages du navigateur.", true, 6000);
-        } else {
-            notify("Erreur caméra : " + errMsg, true);
-        }
-    }
+    // Toujours repartir d'une instance propre pour éviter les états corrompus
+    if (scanner && scanner.isScanning) await scanner.stop();
+    scanner = null;
+    resetTorch();
+
+    await launchScanner();
 }
 
 async function stopScanner() {
     if (scanner && scanner.isScanning) {
         await scanner.stop();
     }
+    scanner = null;
     resetTorch();
     toggleWakeLock(false);
 }
@@ -332,29 +331,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const fileName = `Inventaire_${p.name.replace(/ /g, '_')}.txt`;
         const subject = `Export Inventaire : ${p.name}`;
 
-        // 1. Toujours sauvegarder en local (filet de sécurité)
-        fallbackDownload(blob, fileName);
-
-        // 2. Essayer de partager avec le fichier joint (Android / iOS 17.4+)
+        // 1. Priorité : API de partage native (ouvre la feuille de partage Android/iOS
+        //    avec le fichier déjà joint — l'utilisateur choisit son appli mail)
         const file = new File([blob], fileName, { type: blob.type });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             try {
                 await navigator.share({ files: [file], title: subject });
-                return; // l'utilisateur a géré l'envoi depuis la feuille de partage
+                return;
             } catch (e) {
-                if (e.name === 'AbortError') return; // annulé volontairement, fichier déjà téléchargé
+                if (e.name === 'AbortError') return; // annulé par l'utilisateur
+                // Partage échoué → continue vers le fallback
             }
         }
 
-        // 3. Fallback : ouvrir le client mail (fichier déjà dans les Téléchargements)
+        // 2. Fallback : téléchargement local + ouverture du client mail
+        fallbackDownload(blob, fileName);
         const isAndroid = /android/i.test(navigator.userAgent);
-        const delay = isAndroid ? 0 : 500;
         if (isAndroid) {
-            notify(`Fichier "${fileName}" enregistré dans vos Téléchargements. Joignez-le manuellement à l'email qui va s'ouvrir.`, false, 8000);
+            notify(`Fichier "${fileName}" enregistré dans vos Téléchargements. Joignez-le à l'email qui va s'ouvrir.`, false, 8000);
         }
         setTimeout(() => {
             window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
-        }, delay);
+        }, isAndroid ? 0 : 500);
     });
     
     document.getElementById('btn-import-csv').addEventListener('click', () => document.getElementById('input-file-csv').click());

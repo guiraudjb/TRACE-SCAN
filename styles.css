@@ -5,6 +5,29 @@
 /* Zone Scan spécifique */
 #camera-zone {
     flex-shrink: 0;
+    position: relative;
+}
+
+#btn-torch {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    z-index: 10;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.55);
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+#btn-torch.active {
+    background: rgba(255, 220, 0, 0.85);
 }
 
 #reader {

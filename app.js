@@ -3,6 +3,7 @@ let scanner = null;
 let wakeLock = null;
 let isSortedAlphabetically = false;
 let scanMode = '2d';
+let torchEnabled = false;
 
 // --- NAVIGATION ---
 function showView(viewId) {
@@ -59,8 +60,38 @@ function getCameraConstraints() {
     return { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } };
 }
 
+function checkTorchSupport() {
+    const btn = document.getElementById('btn-torch');
+    try {
+        const capabilities = scanner.getRunningTrackCapabilities();
+        btn.style.display = (capabilities && capabilities.torch) ? 'flex' : 'none';
+    } catch (e) {
+        btn.style.display = 'none';
+    }
+}
+
+async function toggleTorch() {
+    if (!scanner || !scanner.isScanning) return;
+    torchEnabled = !torchEnabled;
+    try {
+        await scanner.applyVideoConstraints({ advanced: [{ torch: torchEnabled }] });
+        document.getElementById('btn-torch').classList.toggle('active', torchEnabled);
+    } catch (e) {
+        torchEnabled = false;
+        notify("Flash non supporté sur cet appareil", true);
+    }
+}
+
+function resetTorch() {
+    torchEnabled = false;
+    const btn = document.getElementById('btn-torch');
+    btn.classList.remove('active');
+    btn.style.display = 'none';
+}
+
 async function toggleScanMode() {
     if (scanner && scanner.isScanning) await scanner.stop();
+    resetTorch();
     scanner = null;
     scanMode = scanMode === '2d' ? '1d' : '2d';
     updateToggleModeBtn();
@@ -74,6 +105,7 @@ async function toggleScanMode() {
             { fps: 15, disableFlip: false, qrbox: getQrbox },
             onScanSuccess
         );
+        checkTorchSupport();
     } catch (e) {
         console.error("Détail de l'erreur caméra :", e);
         notify("Erreur caméra : " + (e.name || "Non autorisée"), true);
@@ -108,6 +140,7 @@ async function startScanner(projectId) {
             { fps: 15, disableFlip: false, qrbox: getQrbox },
             onScanSuccess
         );
+        checkTorchSupport();
     } catch (e) {
         console.error("Détail de l'erreur caméra :", e);
         notify("Erreur caméra : " + (e.name || "Non autorisée"), true);
@@ -118,6 +151,7 @@ async function stopScanner() {
     if (scanner && scanner.isScanning) {
         await scanner.stop();
     }
+    resetTorch();
     toggleWakeLock(false);
 }
 
@@ -363,6 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-back').addEventListener('click', () => showView('view-home'));
     document.getElementById('btn-toggle-mode').addEventListener('click', toggleScanMode);
+    document.getElementById('btn-torch').addEventListener('click', toggleTorch);
 
     document.getElementById('btn-manual-toggle').addEventListener('click', () => {
         const zone = document.getElementById('manual-input-zone');

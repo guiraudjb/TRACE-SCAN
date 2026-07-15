@@ -56,22 +56,12 @@ function updateToggleModeBtn() {
     btn.textContent = scanMode === '2d' ? '2D' : '1D';
 }
 
-function getCameraConstraints() {
-    return { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } };
-}
-
 async function startCamera(scannerInstance, onSuccess) {
-    const config = { fps: 15, disableFlip: false, qrbox: getQrbox };
-    try {
-        await scannerInstance.start(getCameraConstraints(), config, onSuccess);
-    } catch (firstError) {
-        if (firstError.name === 'NotAllowedError' || firstError.name === 'PermissionDeniedError') {
-            throw firstError;
-        }
-        // Contrainte de résolution non satisfaite sur cet appareil → repli sans HD
-        console.warn("Caméra HD échouée, repli basique :", firstError);
-        await scannerInstance.start({ facingMode: "environment" }, config, onSuccess);
-    }
+    await scannerInstance.start(
+        { facingMode: "environment" },
+        { fps: 15, disableFlip: false, qrbox: getQrbox },
+        onSuccess
+    );
 }
 
 function checkTorchSupport() {
@@ -118,10 +108,11 @@ async function toggleScanMode() {
         checkTorchSupport();
     } catch (e) {
         console.error("Détail de l'erreur caméra :", e);
+        const errMsg = typeof e === 'string' ? e : (e.name || e.message || JSON.stringify(e) || 'inconnue');
         if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
             notify("Permission caméra refusée. Vérifiez les réglages du navigateur.", true, 6000);
         } else {
-            notify("Erreur caméra : " + (e.name || e.message || "inconnue"), true);
+            notify("Erreur caméra : " + errMsg, true);
         }
     }
 }
@@ -153,10 +144,11 @@ async function startScanner(projectId) {
         checkTorchSupport();
     } catch (e) {
         console.error("Détail de l'erreur caméra :", e);
+        const errMsg = typeof e === 'string' ? e : (e.name || e.message || JSON.stringify(e) || 'inconnue');
         if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
             notify("Permission caméra refusée. Vérifiez les réglages du navigateur.", true, 6000);
         } else {
-            notify("Erreur caméra : " + (e.name || e.message || "inconnue"), true);
+            notify("Erreur caméra : " + errMsg, true);
         }
     }
 }

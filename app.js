@@ -55,6 +55,10 @@ function updateToggleModeBtn() {
     btn.textContent = scanMode === '2d' ? '2D' : '1D';
 }
 
+function getCameraConstraints() {
+    return { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } };
+}
+
 async function toggleScanMode() {
     if (scanner && scanner.isScanning) await scanner.stop();
     scanner = null;
@@ -66,8 +70,8 @@ async function toggleScanMode() {
     });
     try {
         await scanner.start(
-            { facingMode: "environment" },
-            { fps: 10, disableFlip: false, qrbox: getQrbox },
+            getCameraConstraints(),
+            { fps: 15, disableFlip: false, qrbox: getQrbox },
             onScanSuccess
         );
     } catch (e) {
@@ -100,8 +104,8 @@ async function startScanner(projectId) {
     }
     try {
         await scanner.start(
-            { facingMode: "environment" },
-            { fps: 10, disableFlip: false, qrbox: getQrbox },
+            getCameraConstraints(),
+            { fps: 15, disableFlip: false, qrbox: getQrbox },
             onScanSuccess
         );
     } catch (e) {

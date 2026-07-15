@@ -56,14 +56,6 @@ function updateToggleModeBtn() {
     btn.textContent = scanMode === '2d' ? '2D' : '1D';
 }
 
-async function startCamera(scannerInstance, onSuccess) {
-    await scannerInstance.start(
-        { facingMode: "environment" },
-        { fps: 15, disableFlip: false, qrbox: getQrbox },
-        onSuccess
-    );
-}
-
 function checkTorchSupport() {
     const btn = document.getElementById('btn-torch');
     try {
@@ -103,27 +95,54 @@ async function toggleScanMode() {
 }
 
 function buildScanner() {
-    // BarcodeDetector natif activé uniquement en mode 1D (codes-barres) où il est fiable.
-    // En mode 2D, ZXing est utilisé pour garantir la lecture des DataMatrix.
     return new Html5Qrcode("reader", {
         formatsToSupport: getScanFormats(),
-        experimentalFeatures: { useBarCodeDetectorIfSupported: scanMode === '1d' }
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     });
 }
 
+function notifyCameraError(e) {
+    console.error("Erreur caméra :", e);
+    const msg = typeof e === 'string' ? e : (e.name || e.message || JSON.stringify(e) || 'inconnue');
+    if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+        notify("Permission caméra refusée. Vérifiez les réglages du navigateur.", true, 6000);
+    } else {
+        notify("Erreur caméra : " + msg, true);
+    }
+}
+
 async function launchScanner() {
+    const config = { fps: 10, disableFlip: false, qrbox: getQrbox };
+
+    // Tentative 1 : facingMode standard (Chrome, Firefox, Safari)
     scanner = buildScanner();
     try {
-        await startCamera(scanner, onScanSuccess);
+        await scanner.start({ facingMode: "environment" }, config, onScanSuccess);
+        checkTorchSupport();
+        return;
+    } catch (firstError) {
+        if (firstError.name === 'NotAllowedError' || firstError.name === 'PermissionDeniedError') {
+            notifyCameraError(firstError);
+            return;
+        }
+        // facingMode refusé (Samsung Galaxy, certains Android) → fallback par device ID
+        console.warn("facingMode échoué, repli par énumération caméras :", firstError);
+    }
+
+    // Tentative 2 : énumération des caméras et sélection de la caméra arrière par ID
+    try {
+        const cameras = await Html5Qrcode.getCameras();
+        if (!cameras || cameras.length === 0) throw new Error("Aucune caméra détectée");
+        // Préférer la caméra dont le label contient "back/rear/arrière"
+        // puis exclure les caméras "front/user/selfie", sinon prendre la dernière
+        const back = cameras.find(c => /back|rear|environment|arrière/i.test(c.label))
+                  || cameras.find(c => !/front|user|avant|selfie/i.test(c.label))
+                  || cameras[cameras.length - 1];
+        scanner = buildScanner();
+        await scanner.start(back.id, config, onScanSuccess);
         checkTorchSupport();
     } catch (e) {
-        console.error("Détail de l'erreur caméra :", e);
-        const errMsg = typeof e === 'string' ? e : (e.name || e.message || JSON.stringify(e) || 'inconnue');
-        if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
-            notify("Permission caméra refusée. Vérifiez les réglages du navigateur.", true, 6000);
-        } else {
-            notify("Erreur caméra : " + errMsg, true);
-        }
+        notifyCameraError(e);
     }
 }
 

@@ -324,21 +324,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const blob = new Blob([csvContent], { type: 'text/plain;charset=utf-8;' });
         const fileName = `Inventaire_${p.name.replace(/ /g, '_')}.txt`;
+        const subject = `Export Inventaire : ${p.name}`;
 
-        const shared = await shareOrDownload(blob, fileName);
-        if (!shared) {
-            const isAndroid = /android/i.test(navigator.userAgent);
-            if (isAndroid) {
-                notify(`Fichier "${fileName}" enregistré dans vos Téléchargements. Ouvrez votre appli email, créez un message et joignez ce fichier depuis vos Téléchargements.`, false, 8000);
-            } else {
-                notify("Fichier téléchargé. Ouverture de l'email...");
-                setTimeout(() => {
-                    const subject = encodeURIComponent(`Export Inventaire : ${p.name}`);
-                    const body = encodeURIComponent(emailBody);
-                    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-                }, 1000);
+        // 1. Toujours sauvegarder en local (filet de sécurité)
+        fallbackDownload(blob, fileName);
+
+        // 2. Essayer de partager avec le fichier joint (Android / iOS 17.4+)
+        const file = new File([blob], fileName, { type: blob.type });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({ files: [file], title: subject });
+                return; // l'utilisateur a géré l'envoi depuis la feuille de partage
+            } catch (e) {
+                if (e.name === 'AbortError') return; // annulé volontairement, fichier déjà téléchargé
             }
         }
+
+        // 3. Fallback : ouvrir le client mail (fichier déjà dans les Téléchargements)
+        const isAndroid = /android/i.test(navigator.userAgent);
+        const delay = isAndroid ? 0 : 500;
+        if (isAndroid) {
+            notify(`Fichier "${fileName}" enregistré dans vos Téléchargements. Joignez-le manuellement à l'email qui va s'ouvrir.`, false, 8000);
+        }
+        setTimeout(() => {
+            window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+        }, delay);
     });
     
     document.getElementById('btn-import-csv').addEventListener('click', () => document.getElementById('input-file-csv').click());

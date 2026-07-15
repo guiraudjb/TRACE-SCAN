@@ -14,11 +14,11 @@ function showView(viewId) {
     }
 }
 
-function notify(msg, isError = false) {
+function notify(msg, isError = false, duration = 3000) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.className = isError ? 'show error' : 'show';
-    setTimeout(() => t.classList.remove('show'), 3000);
+    setTimeout(() => t.classList.remove('show'), duration);
 }
 
 async function toggleWakeLock(active) {
@@ -241,8 +241,13 @@ function fallbackDownload(blob, fileName) {
     const a = document.createElement('a');
     a.href = url;
     a.download = fileName;
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    // Délai long : sur Android le téléchargement est asynchrone et l'URL
+    // doit rester valide le temps que le navigateur récupère les données.
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 async function shareOrDownload(blob, fileName) {
@@ -284,12 +289,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const shared = await shareOrDownload(blob, fileName);
         if (!shared) {
-            notify("Fichier téléchargé. Ouverture de l'email...");
-            setTimeout(() => {
-                const subject = encodeURIComponent(`Export Inventaire : ${p.name}`);
-                const body = encodeURIComponent(emailBody);
-                window.location.href = `mailto:?subject=${subject}&body=${body}`;
-            }, 1000);
+            const isAndroid = /android/i.test(navigator.userAgent);
+            if (isAndroid) {
+                notify(`Fichier "${fileName}" enregistré dans vos Téléchargements. Ouvrez votre appli email, créez un message et joignez ce fichier depuis vos Téléchargements.`, false, 8000);
+            } else {
+                notify("Fichier téléchargé. Ouverture de l'email...");
+                setTimeout(() => {
+                    const subject = encodeURIComponent(`Export Inventaire : ${p.name}`);
+                    const body = encodeURIComponent(emailBody);
+                    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+                }, 1000);
+            }
         }
     });
     

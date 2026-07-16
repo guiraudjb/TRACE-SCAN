@@ -1,5 +1,5 @@
-/* Service Worker TRACE_SCAN v2.3 */
-const CACHE_NAME = 'trace-scan-cache-v15';
+/* Service Worker TRACE_SCAN v2.4 */
+const CACHE_NAME = 'trace-scan-cache-v16';
 
 const ASSETS_TO_CACHE = [
   './',

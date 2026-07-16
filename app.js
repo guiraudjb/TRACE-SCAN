@@ -275,6 +275,17 @@ function confirmDelete(id) {
     }
 }
 
+function sanitizeFileName(name) {
+    // Retire les caractères interdits (Windows/Android/iOS) et les espaces,
+    // sans toucher aux accents (valides partout en UTF-8).
+    return name
+        .replace(/[\\/:*?"<>|\x00-\x1F]/g, '_')
+        .replace(/\s+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 80) || 'Inventaire';
+}
+
 function fallbackDownload(blob, fileName) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -323,8 +334,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const csvContent = "Code_Inventaire,Commentaire\n" +
             p.items.map(i => `"${i.code}","${(i.comment || '').replace(/"/g, '""')}"`).join("\n");
 
-        const blob = new Blob([csvContent], { type: 'text/plain;charset=utf-8;' });
-        const fileName = `Inventaire_${p.name.replace(/ /g, '_')}.txt`;
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const fileName = `Inventaire_${sanitizeFileName(p.name)}.csv`;
         const subject = `Export Inventaire : ${p.name}`;
 
         // 1. Priorité : API de partage native (ouvre la feuille de partage Android/iOS

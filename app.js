@@ -2,7 +2,6 @@ let currentProjectId = null;
 let scanner = null;
 let wakeLock = null;
 let isSortedAlphabetically = false;
-let scanMode = '2d';
 let torchEnabled = false;
 
 // --- NAVIGATION ---
@@ -36,24 +35,12 @@ async function toggleWakeLock(active) {
 
 // --- HELPERS MODE SCAN ---
 function getScanFormats() {
-    if (scanMode === '2d') {
-        return [Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.DATA_MATRIX];
-    }
-    return [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39];
+    return [Html5QrcodeSupportedFormats.DATA_MATRIX];
 }
 
 function getQrbox(w, h) {
-    if (scanMode === '2d') {
-        const side = Math.floor(Math.min(w, h) * 0.7);
-        return { width: side, height: side };
-    }
-    return { width: Math.floor(w * 0.85), height: Math.floor(h * 0.25) };
-}
-
-function updateToggleModeBtn() {
-    const btn = document.getElementById('btn-toggle-mode');
-    if (!btn) return;
-    btn.textContent = scanMode === '2d' ? '2D' : '1D';
+    const side = Math.floor(Math.min(w, h) * 0.7);
+    return { width: side, height: side };
 }
 
 function checkTorchSupport() {
@@ -83,15 +70,6 @@ function resetTorch() {
     const btn = document.getElementById('btn-torch');
     btn.classList.remove('active');
     btn.style.display = 'none';
-}
-
-async function toggleScanMode() {
-    if (scanner && scanner.isScanning) await scanner.stop();
-    scanner = null;
-    resetTorch();
-    scanMode = scanMode === '2d' ? '1d' : '2d';
-    updateToggleModeBtn();
-    await launchScanner();
 }
 
 function buildScanner() {
@@ -154,7 +132,6 @@ async function startScanner(projectId) {
     updateScanUI(project);
 
     showView('view-scan');
-    updateToggleModeBtn();
     document.getElementById('manual-input-zone').style.display = 'none';
     document.getElementById('manual-code-input').value = '';
     document.getElementById('btn-manual-toggle').textContent = 'Manuel';
@@ -429,7 +406,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-back').addEventListener('click', () => showView('view-home'));
-    document.getElementById('btn-toggle-mode').addEventListener('click', toggleScanMode);
     document.getElementById('btn-torch').addEventListener('click', toggleTorch);
 
     document.getElementById('btn-manual-toggle').addEventListener('click', () => {

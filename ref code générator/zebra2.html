@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>mobiTrace - Impression ZPL Multi-Formats Sécurisée</title>
+    <title>mobiTrace - Impression ZPL DataMatrix Sécurisée</title>
     
     <link rel="stylesheet" href="../dsfr-v1.14.3/dist/dsfr.min.css">
     
@@ -48,7 +48,7 @@
 </head>
 <body>
     <div class="fr-container fr-mt-4w fr-mb-8w">
-        <h1 class="fr-h4">Génération d'étiquettes mobiTrace — Multi-formats</h1>
+        <h1 class="fr-h4">Génération d'étiquettes mobiTrace — DataMatrix</h1>
         
         <div class="fr-grid-row fr-grid-row--gutters">
             
@@ -57,14 +57,7 @@
                 <div class="fr-select-group">
                     <label class="fr-label" for="typeSelect">Mise en page & Symbologie</label>
                     <select id="typeSelect" class="fr-select">
-                        <optgroup label="Formats 2D (Haute densité)">
-                            <option value="qrcode">QR Code</option>
-                            <option value="datamatrix">DataMatrix (Ultra-compact)</option>
-                        </optgroup>
-                        <optgroup label="Formats 1D (Linéaires)">
-                            <option value="code128">Code 128 (Standard Zebra)</option>
-                            <option value="code39">Code 39 (Standard Administration)</option>
-                        </optgroup>
+                        <option value="datamatrix">DataMatrix (Ultra-compact)</option>
                     </select>
                 </div>
 
@@ -250,52 +243,35 @@
             }
         }
 
-        // Moteur de composition graphique (WYSIWYG) gérant 1D et 2D
+        // Moteur de composition graphique (WYSIWYG) — DataMatrix uniquement
         function renderLabelToCanvas(targetCanvas, type, data, adminText) {
             const ctx = targetCanvas.getContext('2d');
             targetCanvas.width = LABEL_W;
             targetCanvas.height = LABEL_H;
-            
+
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
             ctx.fillStyle = "black";
 
             if (!data) data = "MOBI-TRACE";
 
-            const is2D = (type === 'qrcode' || type === 'datamatrix');
+            ctx.font = "bold 28px sans-serif";
+            ctx.fillText(adminText, 160, 65);
+            ctx.font = "34px sans-serif";
+            ctx.fillText(data, 160, 125);
 
-            if (is2D) {
-                ctx.font = "bold 28px sans-serif";
-                ctx.fillText(adminText, 160, 65); 
-                ctx.font = "34px sans-serif";
-                ctx.fillText(data, 160, 125); 
+            try {
+                let tempCanvas = document.createElement('canvas');
+                bwipjs.toCanvas(tempCanvas, {
+                    bcid: 'datamatrix',
+                    text: data,
+                    scale: 5
+                });
 
-                try {
-                    let tempCanvas = document.createElement('canvas');
-                    bwipjs.toCanvas(tempCanvas, { 
-                        bcid: type, 
-                        text: data, 
-                        scale: type === 'qrcode' ? 4 : 5 
-                    });
-                    
-                    const imgSize = type === 'datamatrix' ? 100 : 120;
-                    const yPos = (200 - imgSize) / 2;
-                    ctx.drawImage(tempCanvas, 20, yPos, imgSize, imgSize); 
-                } catch (e) { console.error(e); }
-            } else {
-                try {
-                    let tempCanvas = document.createElement('canvas');
-                    bwipjs.toCanvas(tempCanvas, {
-                        bcid: type, 
-                        text: data, 
-                        scale: 3, 
-                        height: 12, 
-                        includetext: true, 
-                        textxalign: 'center'
-                    });
-                    ctx.drawImage(tempCanvas, 40, 50, 328, 100);
-                } catch (e) { console.error(e); }
-            }
+                const imgSize = 100;
+                const yPos = (200 - imgSize) / 2;
+                ctx.drawImage(tempCanvas, 20, yPos, imgSize, imgSize);
+            } catch (e) { console.error(e); }
         }
 
         // Mise à jour de l'interface
@@ -350,34 +326,10 @@
                 zpl += `^PR${speed}\n`;
                 zpl += `^PW${LABEL_W}\n^LL${LABEL_H}\n^LH0,0\n`;
 
-                switch (type) {
-                    case 'qrcode':
-                        // ^FDQA : Q = correction 25% (Quartile), A = encodage automatique
-                        zpl += `^FO20,25^BQN,2,4^FDQA,${item}^FS\n`;
-                        zpl += `^FO160,40^A0N,28,28^FD${adminText}^FS\n`;
-                        zpl += `^FO160,100^A0N,34,34^FD${item}^FS\n`;
-                        break;
-                    case 'datamatrix':
-                        zpl += `^FO20,30^BXN,5,200^FD${item}^FS\n`;
-                        zpl += `^FO160,40^A0N,28,28^FD${adminText}^FS\n`;
-                        zpl += `^FO160,100^A0N,34,34^FD${item}^FS\n`;
-                        break;
-                    case 'code39': {
-                        // narrow=1 : MOB-XXXXXX ≈ 191 dots — centrage correct sur 408 dots
-                        const x39 = Math.max(10, Math.floor((LABEL_W - 191) / 2));
-                        zpl += `^BY1,3.0,70\n`;
-                        zpl += `^FO${x39},50^B3N,N,70,Y,N^FD${item}^FS\n`;
-                        break;
-                    }
-                    case 'code128': {
-                        // narrow=2 : MOB-XXXXXX ≈ 290 dots — centrage correct sur 408 dots
-                        const x128 = Math.max(10, Math.floor((LABEL_W - 290) / 2));
-                        zpl += `^BY2,3.0,70\n`;
-                        zpl += `^FO${x128},50^BCN,70,Y,N,N^FD${item}^FS\n`;
-                        break;
-                    }
-                }
-                
+                zpl += `^FO20,30^BXN,5,200^FD${item}^FS\n`;
+                zpl += `^FO160,40^A0N,28,28^FD${adminText}^FS\n`;
+                zpl += `^FO160,100^A0N,34,34^FD${item}^FS\n`;
+
                 zpl += "^XZ\n";
             });
 

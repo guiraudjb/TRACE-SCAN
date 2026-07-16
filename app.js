@@ -355,7 +355,9 @@ document.addEventListener('DOMContentLoaded', () => {
         fallbackDownload(blob, fileName);
         const isAndroid = /android/i.test(navigator.userAgent);
         if (isAndroid) {
-            notify(`Fichier "${fileName}" enregistré dans vos Téléchargements. Joignez-le à l'email qui va s'ouvrir.`, false, 8000);
+            // Chemin fixe utilisé par tous les navigateurs Android pour les
+            // téléchargements <a download> (jamais de choix d'emplacement côté page).
+            notify(`Fichier enregistré : /storage/emulated/0/Download/${fileName}\nJoignez-le à l'email qui va s'ouvrir.`, false, 8000);
         }
         setTimeout(() => {
             window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
